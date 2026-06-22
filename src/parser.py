@@ -148,7 +148,6 @@ class Parser():
 
 			i += 1
 
-
 p = Parser()
 
 with open("maps/easy/01_linear_path.txt", 'r') as fp:
