@@ -1,8 +1,9 @@
 from typing import List, Dict, Any
+from graph import Graph
 
 
 class Parser():
-	def __init__(self):
+	def __init__(self) -> None:
 		self.nb_drones: int = 0
 		self.hubs: List[Dict] = []
 		self.connections: List[Dict] = []
@@ -118,40 +119,35 @@ class Parser():
 
 		self.connections.append(conn)
 
-	def parse_map(self, fp: Any) -> None:
+	def parse_map(self, path: str) -> Graph:
 
 		i = 0
-		for line in fp:
-			line: str = line.strip()
+		with open(path, 'r') as fp:
+			for line in fp:
+				line: str = line.strip()
 
-			if line.startswith("#") or not line:
-				continue
+				if line.startswith("#") or not line:
+					continue
 
-			if i == 0 and line.startswith("nb_drones:"):
-				self.parse_drones(line)
-			elif i == 0 and not line.startswith("nb_drones:"):
-				raise ValueError("[ERROR] nb_drones was not found!")
+				if i == 0 and line.startswith("nb_drones:"):
+					self.parse_drones(line)
+				elif i == 0 and not line.startswith("nb_drones:"):
+					raise ValueError("[ERROR] nb_drones was not found!")
 
-			if line.startswith("start_hub:"):
-				self.parse_start(line)
-			
-			if line.startswith("hub:"):
-				self.parse_hub(line)
-			
-			if line.startswith("end_hub:"):
-				self.parse_end(line)
-			
-			if line.startswith("connection:"):
-				self.parse_connection(line)
+				if line.startswith("start_hub:"):
+					self.parse_start(line)
+				
+				if line.startswith("hub:"):
+					self.parse_hub(line)
+				
+				if line.startswith("end_hub:"):
+					self.parse_end(line)
+				
+				if line.startswith("connection:"):
+					self.parse_connection(line)
 
-			# print(line)
+				i += 1
 
-			i += 1
+		graph = Graph(self.nb_drones, self.hubs, self.connections)
 
-p = Parser()
-
-with open("maps/easy/01_linear_path.txt", 'r') as fp:
-	p.parse_map(fp)
-	print(p.nb_drones)
-	print(p.hubs)
-	print(p.connections)
+		return graph
