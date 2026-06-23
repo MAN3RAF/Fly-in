@@ -57,15 +57,16 @@ class Graph():
 	
 	def get_drones(self):
 
-		for zone in self.zones:
-			if "start" in zone.name:
-				coords: tuple[int] = zone.coords
-		for zone in self.zones:
-			if "goal" in zone.name:
-				end_zone = zone
+		for i in range(0, self.nb_drones):
+			for zone in self.zones:
+				if "start" in zone.name:
+					coords: tuple[int] = zone.coords
+			for zone in self.zones:
+				if "goal" in zone.name:
+					end_zone = zone
 
-		for i in range(1, self.nb_drones):
+			
 			drone = Drone(i, coords, [], end_zone)
 			self.drones.append(drone)
-		return 
+		return self.drones
 

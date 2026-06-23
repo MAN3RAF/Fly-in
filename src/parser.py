@@ -22,7 +22,7 @@ class Parser():
 		if int(second) < 1:
 			raise ValueError("[ERROR] Invalid Number of drones!")
 
-		self.nb_drones = second
+		self.nb_drones = int(second)
 
 	def parse_start(self, line: str) -> None:
 

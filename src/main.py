@@ -10,8 +10,9 @@ parser = Parser()
 
 graph = parser.parse_map("maps/easy/01_linear_path.txt")
 
-# print(graph.get_hubs()[1].name)
-# print(graph.get_connections())
+print(graph.get_hubs()[1].name)
+print(graph.get_connections())
+print(graph.get_drones())
 
 
 
