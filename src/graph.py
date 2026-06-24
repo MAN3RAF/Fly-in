@@ -1,6 +1,7 @@
 from typing import List, Dict, Any
 from zone import Zone
 from drone import Drone
+from connection import Connection
 
 
 class Graph():
@@ -12,7 +13,7 @@ class Graph():
 		self.hubs = hubs
 		self.connections = connections
 		self.zones: List[Zone] = []
-		self.connects: Dict[Zone,Zone] = {}
+		self.connects: List[Connection] = []
 		self.drones: List[Drone] = []
 
 	def get_hubs(self) -> List[Zone]:
@@ -38,7 +39,7 @@ class Graph():
 
 		return self.zones
 
-	def get_connections(self) -> Dict[Zone, Zone]:
+	def get_connections(self) -> List[Connection]:
 
 		for conn in self.connections:
 			if not self.zones:
@@ -51,11 +52,15 @@ class Graph():
 				if zone.name in conn.values(): #if name of zone in connection in our zones.
 					link_2: Zone = zone
 					break
-			self.connects[link_1] = link_2
+			if "max_link_capacity" in conn:
+				con = Connection(link_1, link_2, conn['max_link_capacity'])
+			else:
+				con = Connection(link_1, link_2)
+			self.connects.append(con)
 
 		return self.connects
 	
-	def get_drones(self):
+	def get_drones(self) -> List[Drone]:
 
 		for i in range(0, self.nb_drones):
 			for zone in self.zones:

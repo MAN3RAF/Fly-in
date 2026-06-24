@@ -8,12 +8,17 @@ from connection import Connection
 
 parser = Parser()
 
+# zone = Zone("Man", (0, 1), "red", 1)
+
+# drone = Drone(1, (1, 2), [], zone)
+
 graph = parser.parse_map("maps/easy/01_linear_path.txt")
 
 print(graph.get_hubs()[1].name)
-print(graph.get_connections())
+print(graph.get_connections()[0])
 print(graph.get_drones())
 
+# print(drone.coords, drone.destination.color, drone.id, drone.path)
 
 
 
