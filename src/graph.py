@@ -20,10 +20,10 @@ class Graph():
 			neighbors = [] #neighbor list, left neighbor and right neighbor.
 			for conn in self.connections:
 				if zone == conn.zone_1: #if zone in conn left.
-					if not conn.zone_2 in neighbors: #if that neighbor not in list yet.
+					if conn.zone_2 not in neighbors: #if that neighbor not in list yet.
 						neighbors.append(conn.zone_2)
 				if zone == conn.zone_2: #if zone in conn right.
-					if not conn.zone_2 in neighbors: #if that neighbor not in list yet.
+					if conn.zone_1 not in neighbors: #if that neighbor not in list yet.
 						neighbors.append(conn.zone_1)
 				
 			self.neighbors[zone] = neighbors

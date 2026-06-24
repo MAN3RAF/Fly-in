@@ -10,9 +10,9 @@ class Map():
 			connections: List[Dict], start_hub: Zone,
 			end_hub: Zone) -> None:
 		
-		self.nb_drones = nb_drones
-		self.hubs = hubs
-		self.connections = connections
+		self.nb_drones = nb_drones 	   # int
+		self.hubs = hubs			   # Dict
+		self.connections = connections # List[dict[str, str]]
 		self.zones: List[Zone] = []
 		self.start_hub: Zone = start_hub
 		self.end_hub: Zone = end_hub
@@ -49,25 +49,43 @@ class Map():
 
 
 	def get_connections(self) -> None:
+		if not self.zones:
+			self.get_hubs()
+
+		zones_by_name: dict[str, Zone] = {
+			zone.name: zone
+			for zone in self.zones
+		}
 
 		for conn in self.connections:
-			if not self.zones:
-				self.zones = self.get_hubs()
-			for zone in self.zones:
-				if zone.name in conn: #if name of zone in connection in our zones.
-					link_1: Zone = zone
-					break
-			for zone in self.zones:
-				if zone.name in conn.values(): #if name of zone in connection in our zones.
-					link_2: Zone = zone
-					break
-			if "max_link_capacity" in conn:
-				con = Connection(link_1, link_2, conn['max_link_capacity'])
-			else:
-				con = Connection(link_1, link_2)
-			self.connects.append(con)
+			source_name: str | None = None
+			target_name: str | None = None
 
-	
+			for key, value in conn.items():
+				if key == "max_link_capacity":
+					continue
+
+				source_name = key
+				target_name = value
+				break
+
+			# if source_name is None or target_name is None:
+			# 	raise ValueError(f"Invalid connection: {conn}")
+
+			source_zone = zones_by_name[source_name]
+			target_zone = zones_by_name[target_name]
+
+			capacity = conn.get("max_link_capacity", 1)
+
+			self.connects.append(
+				Connection(
+					source_zone,
+					target_zone,
+					capacity
+				)
+			)
+
+
 	def get_drones(self) -> None:
 
 		for i in range(0, self.nb_drones):
@@ -87,9 +105,9 @@ class Parser():
 	def __init__(self) -> None:
 		self.nb_drones: int = 0
 		self.hubs: List[Dict] = []
-		self.connections: List[Dict] = []
-		self.start_hub: Dict
-		self.end_hub: Dict
+		self.connections: List[Dict[str, str]] = []
+		self.start_hub: Dict = {}
+		self.end_hub: Dict = {}
 
 
 	def parse_drones(self, line: str) -> None:
