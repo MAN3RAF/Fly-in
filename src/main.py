@@ -12,11 +12,10 @@ parser = Parser()
 
 # drone = Drone(1, (1, 2), [], zone)
 
-graph = parser.parse_map("maps/easy/01_linear_path.txt")
-
-print(graph.get_hubs()[1].name)
-print(graph.get_connections()[0])
-print(graph.get_drones())
+map = parser.parse_map("maps/hard/01_maze_nightmare.txt") #try/except.
+graph = Graph(map)
+graph.get_neighbors()
+print(graph.neighbors)
 
 # print(drone.coords, drone.destination.color, drone.id, drone.path)
 

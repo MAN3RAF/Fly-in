@@ -1,5 +1,86 @@
 from typing import List, Dict, Any
-from graph import Graph
+from zone import Zone
+from drone import Drone
+from connection import Connection
+
+
+class Map():
+	def __init__(
+			self, nb_drones: int, hubs: List[Dict],
+			connections: List[Dict], start_hub: Zone,
+			end_hub: Zone) -> None:
+		
+		self.nb_drones = nb_drones
+		self.hubs = hubs
+		self.connections = connections
+		self.zones: List[Zone] = []
+		self.start_hub: Zone = start_hub
+		self.end_hub: Zone = end_hub
+		self.connects: List[Connection] = []
+		self.drones: List[Drone] = []
+
+
+	def init_map(self) -> None:
+		self.get_hubs()
+		self.get_drones()
+		self.get_connections()
+
+
+	def get_hubs(self) -> None:
+
+		for hub in self.hubs:
+			
+			name = hub['name']
+			coords = (hub['x'], hub['y'])
+			color = "none"
+			max_drones = 1
+			type = "normal"
+
+			if 'color' in hub:
+				color = hub['color']
+			if 'max_drones' in hub:
+				max_drones = hub['max_drones']
+			if 'type' in hub:
+				type = hub["type"]
+
+			zone = Zone(name, coords, color, max_drones, type)
+
+			self.zones.append(zone)
+
+
+	def get_connections(self) -> None:
+
+		for conn in self.connections:
+			if not self.zones:
+				self.zones = self.get_hubs()
+			for zone in self.zones:
+				if zone.name in conn: #if name of zone in connection in our zones.
+					link_1: Zone = zone
+					break
+			for zone in self.zones:
+				if zone.name in conn.values(): #if name of zone in connection in our zones.
+					link_2: Zone = zone
+					break
+			if "max_link_capacity" in conn:
+				con = Connection(link_1, link_2, conn['max_link_capacity'])
+			else:
+				con = Connection(link_1, link_2)
+			self.connects.append(con)
+
+	
+	def get_drones(self) -> None:
+
+		for i in range(0, self.nb_drones):
+			for zone in self.zones:
+				if "start" in zone.name:
+					coords: tuple[int] = zone.coords
+			for zone in self.zones:
+				if "goal" in zone.name:
+					end_zone = zone
+
+			
+			drone = Drone(i, coords, [], end_zone)
+			self.drones.append(drone)
 
 
 class Parser():
@@ -7,9 +88,8 @@ class Parser():
 		self.nb_drones: int = 0
 		self.hubs: List[Dict] = []
 		self.connections: List[Dict] = []
-		# self.start_hub: Dict = {}
-		# self.hub: Dict = {}
-		# self.end_hub: Dict = {}
+		self.start_hub: Dict
+		self.end_hub: Dict
 
 
 	def parse_drones(self, line: str) -> None:
@@ -23,6 +103,7 @@ class Parser():
 			raise ValueError("[ERROR] Invalid Number of drones!")
 
 		self.nb_drones = int(second)
+
 
 	def parse_start(self, line: str) -> None:
 
@@ -46,7 +127,9 @@ class Parser():
 				key, value = data.split("=")
 				hub[key] = int(value) if value.isdigit() else value
 
+		self.start_hub = hub
 		self.hubs.append(hub)
+
 
 	def parse_hub(self, line: str) -> None:
 		
@@ -72,6 +155,7 @@ class Parser():
 
 		self.hubs.append(hub)
 
+
 	def parse_end(self, line: str) -> None:
 		
 		if '[' in line:
@@ -94,7 +178,9 @@ class Parser():
 				key, value = data.split("=")
 				hub[key] = int(value) if value.isdigit() else value
 
+		self.end_hub = hub
 		self.hubs.append(hub)
+
 
 	def parse_connection(self, line: str):
 
@@ -119,7 +205,8 @@ class Parser():
 
 		self.connections.append(conn)
 
-	def parse_map(self, path: str) -> Graph:
+
+	def parse_map(self, path: str) -> Map:
 
 		i = 0
 		with open(path, 'r') as fp:
@@ -136,6 +223,7 @@ class Parser():
 
 				if line.startswith("start_hub:"):
 					self.parse_start(line)
+					
 				
 				if line.startswith("hub:"):
 					self.parse_hub(line)
@@ -148,6 +236,7 @@ class Parser():
 
 				i += 1
 
-		graph = Graph(self.nb_drones, self.hubs, self.connections)
+		map = Map(self.nb_drones, self.hubs, self.connections, self.start_hub, self.end_hub)
+		map.init_map()
 
-		return graph
+		return map

@@ -2,76 +2,30 @@ from typing import List, Dict, Any
 from zone import Zone
 from drone import Drone
 from connection import Connection
-
+from parser import Map
 
 class Graph():
-	def __init__(
-			self, nb_drones: int, hubs: List[Dict],
-			connections: List[Dict]) -> None:
+	def __init__(self, map: Map) -> None:
 		
-		self.nb_drones = nb_drones
-		self.hubs = hubs
-		self.connections = connections
-		self.zones: List[Zone] = []
-		self.connects: List[Connection] = []
-		self.drones: List[Drone] = []
-
-	def get_hubs(self) -> List[Zone]:
-
-		for hub in self.hubs:
-			
-			name = hub['name']
-			coords = (hub['x'], hub['y'])
-			color = "none"
-			max_drones = 1
-			type = "normal"
-
-			if 'color' in hub:
-				color = hub['color']
-			if 'max_drones' in hub:
-				max_drones = hub['max_drones']
-			if 'type' in hub:
-				type = hub["type"]
-
-			zone = Zone(name, coords, color, max_drones, type)
-
-			self.zones.append(zone)
-
-		return self.zones
-
-	def get_connections(self) -> List[Connection]:
-
-		for conn in self.connections:
-			if not self.zones:
-				self.zones = self.get_hubs()
-			for zone in self.zones:
-				if zone.name in conn: #if name of zone in connection in our zones.
-					link_1: Zone = zone
-					break
-			for zone in self.zones:
-				if zone.name in conn.values(): #if name of zone in connection in our zones.
-					link_2: Zone = zone
-					break
-			if "max_link_capacity" in conn:
-				con = Connection(link_1, link_2, conn['max_link_capacity'])
-			else:
-				con = Connection(link_1, link_2)
-			self.connects.append(con)
-
-		return self.connects
+		self.map: Map = map
+		self.drones: List[Drone] = map.drones
+		self.connections: List[Connection] = map.connects
+		self.zones: List[Zone] = map.zones
+		self.neighbors: Dict[Zone, List[Zone]] = {}
 	
-	def get_drones(self) -> List[Drone]:
 
-		for i in range(0, self.nb_drones):
-			for zone in self.zones:
-				if "start" in zone.name:
-					coords: tuple[int] = zone.coords
-			for zone in self.zones:
-				if "goal" in zone.name:
-					end_zone = zone
+	def get_neighbors(self) -> None:
 
-			
-			drone = Drone(i, coords, [], end_zone)
-			self.drones.append(drone)
-		return self.drones
+		for zone in self.zones:
+			neighbors = [] #neighbor list, left neighbor and right neighbor.
+			for conn in self.connections:
+				if zone == conn.zone_1: #if zone in conn left.
+					if not conn.zone_2 in neighbors: #if that neighbor not in list yet.
+						neighbors.append(conn.zone_2)
+				if zone == conn.zone_2: #if zone in conn right.
+					if not conn.zone_2 in neighbors: #if that neighbor not in list yet.
+						neighbors.append(conn.zone_1)
+				
+			self.neighbors[zone] = neighbors
+
 
