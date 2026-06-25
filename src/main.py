@@ -10,19 +10,25 @@ pygame.init()
 parser = Parser()
 
 map_data = parser.parse_map(
-    "maps/challenger/01_the_impossible_dream.txt"
+    "maps/easy/01_linear_path.txt"
 )
 
 graph = Graph(map_data)
 graph.get_neighbors()
 
 renderer = Renderer(graph)
+pygame.init()
 
 screen = pygame.display.set_mode(
-    (Renderer.WIDTH, Renderer.HEIGHT)
+    (1920, 1080),
+    pygame.RESIZABLE
 )
 
-pygame.display.set_caption("Fly-in")
+renderer = Renderer(
+    graph,
+    1920,
+    1080
+)
 
 running = True
 
@@ -33,11 +39,19 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                running = False
+        elif event.type == pygame.VIDEORESIZE:
 
-    screen.fill((25, 25, 25))
+            screen = pygame.display.set_mode(
+                (event.w, event.h),
+                pygame.RESIZABLE
+            )
+
+            renderer.resize(
+                event.w,
+                event.h
+            )
+
+    screen.fill((30, 30, 30))
 
     renderer.draw(screen)
 
