@@ -10,3 +10,4 @@ class Drone():
 		self.coords = coords
 		self.path = path
 		self.destination = destination
+		self.in_trasit = False

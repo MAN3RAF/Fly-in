@@ -1,79 +1,46 @@
 import pygame
+
 from parser import Parser
-from zone import Zone
 from graph import Graph
-from drone import Drone
-from connection import Connection
+from renderer import Renderer
 
-
-parser = Parser()
-
-# zone = Zone("Man", (0, 1), "red", 1)
-
-# drone = Drone(1, (1, 2), [], zone)
-
-map = parser.parse_map("maps/hard/01_maze_nightmare.txt") #try/except.
-graph = Graph(map)
-graph.get_neighbors()
-# print(graph.connections)
-
-# print(drone.coords, drone.destination.color, drone.id, drone.path)
-
-
-
-import pygame
 
 pygame.init()
 
-screen = pygame.display.set_mode((800, 600))
-font = pygame.font.SysFont(None, 30)
+parser = Parser()
+
+map_data = parser.parse_map(
+    "maps/challenger/01_the_impossible_dream.txt"
+)
+
+graph = Graph(map_data)
+graph.get_neighbors()
+
+renderer = Renderer(graph)
+
+screen = pygame.display.set_mode(
+    (Renderer.WIDTH, Renderer.HEIGHT)
+)
+
+pygame.display.set_caption("Fly-in")
 
 running = True
 
 while running:
 
     for event in pygame.event.get():
+
         if event.type == pygame.QUIT:
             running = False
 
-    screen.fill((0, 0, 0))
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
 
-    pygame.draw.circle(
-        screen,
-        (255, 255, 255),
-        (200, 200),
-        20
-    )
+    screen.fill((25, 25, 25))
 
-    text = font.render(
-        "start",
-        True,
-        (255, 255, 255)
-    )
-
-    screen.blit(text, (180, 150))
+    renderer.draw(screen)
 
     pygame.display.flip()
 
 pygame.quit()
-
-
-
-
-
-
-# # Initialize all imported pygame modules
-# pygame.init()
-
-# # Create a display window
-# screen = pygame.display.set_mode((800, 600))
-
-# # Game loop
-# running = True
-# while running:
-#     for event in pygame.event.get():
-#         pygame.draw.line(...)
-#         if event.type == pygame.QUIT:
-#             running = False
-
-# pygame.quit()
