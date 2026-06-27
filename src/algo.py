@@ -57,12 +57,12 @@ class Algo():
 		if not paths:
 			raise ValueError("[ERROR] No seable paths!")
 
-		sorted_paths = sorted(paths, key=lambda x: self.get_cost(x))
+		sorted_paths = sorted(paths, key=lambda x: self.get_cost(x)) #sort by cost
 		
-		cheapest_cost = self.get_cost(sorted_paths[0])
-		second_cheap = cheapest_cost + 1
+		# cheapest_cost = self.get_cost(sorted_paths[0])
+		bigest_road = len(sorted_paths[0]) + 1 #All the cheap ones and small!
 
-		return [path for path in sorted_paths if self.get_cost(path) <= second_cheap]
+		return [path for path in sorted_paths if self.get_cost(path) <= bigest_road]
 
 	def assign_drones(self, paths: List[List[Zone]]) -> None:
 		
@@ -71,4 +71,7 @@ class Algo():
 
 		for i, drone in enumerate(self.graph.drones):
 			drone.path = usable_paths[i % nb_paths]
+			# print(f"{drone.id}: {[x.name for x in drone.path]} ")
+			# print()
+
 

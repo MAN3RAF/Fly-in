@@ -91,13 +91,13 @@ class Map():
 		for i in range(0, self.nb_drones):
 			for zone in self.zones:
 				if "start" in zone.name:
-					coords: tuple[int] = zone.coords
+					start_zone: Zone = zone
 			for zone in self.zones:
 				if "goal" in zone.name:
 					end_zone = zone
 
 			
-			drone = Drone(i, coords, [], end_zone)
+			drone = Drone(i, start_zone, [], end_zone)
 			self.drones.append(drone)
 
 

@@ -3,11 +3,16 @@ from zone import Zone
 
 class Drone():
 	def __init__(
-			self, id: int, coords: tuple[int],
+			self, id: int, zone: Zone,
 			path: List, destination: Zone) -> None:
 		
 		self.id = id
-		self.coords = coords
+		self.current_zone = zone
+		self.steps = 0
 		self.path = path
 		self.destination = destination
 		self.in_trasit = False
+
+
+
+

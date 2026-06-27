@@ -18,7 +18,7 @@ algo = Algo(graph)
 
 paths = algo.get_all_paths(graph.zones)
 # print(paths)
-print(algo.get_usable_paths(paths))
+print(algo.assign_drones(paths))
 
 
 # renderer = Renderer(graph)
