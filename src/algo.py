@@ -64,14 +64,4 @@ class Algo():
 
 		return [path for path in sorted_paths if self.get_cost(path) <= bigest_road]
 
-	def assign_drones(self, paths: List[List[Zone]]) -> None:
-		
-		usable_paths = self.get_usable_paths(paths)
-		nb_paths = len(usable_paths)
-
-		for i, drone in enumerate(self.graph.drones):
-			drone.path = usable_paths[i % nb_paths]
-			# print(f"{drone.id}: {[x.name for x in drone.path]} ")
-			# print()
-
 

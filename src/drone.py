@@ -14,5 +14,8 @@ class Drone():
 		self.in_trasit = False
 
 
+	def move(self) -> None:
+		"""moves the drone to the next zone"""
+		pass
 
 
