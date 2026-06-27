@@ -7,8 +7,10 @@ from parser import Map
 from graph import Graph
 
 class Algo():
+	def __init__(self, graph:Graph):
+		self.graph = graph
 
-	def get_all_paths(self, zones:List[Zone], graph: Graph) -> List[List[Zone]]:
+	def get_all_paths(self, zones:List[Zone]) -> List[List[Zone]]:
 		"""Get all posible paths."""
 
 		all_paths: List[List[Zone]] = []
@@ -26,7 +28,7 @@ class Algo():
 				all_paths.append(path)
 				continue
 
-			neighbors = graph.get_neighbors(current_zone)
+			neighbors = self.graph.get_neighbors(current_zone)
 
 			for neighbor in neighbors:
 				if neighbor in path or neighbor.type == "blocked":
@@ -51,7 +53,7 @@ class Algo():
 
 		return cost
 	
-	def get_useable_paths(self, paths: List[List[Zone]]) -> List[List[Zone]]:
+	def get_usable_paths(self, paths: List[List[Zone]]) -> List[List[Zone]]:
 		"""Get usable most paths"""
 
 		if not paths:
@@ -64,4 +66,11 @@ class Algo():
 
 		return [path for path in sorted_paths if self.get_cost(path) <= second_cheap]
 
-	# def asign_drones(self, )
+	def assign_drones(self, paths: List[List[Zone]]) -> None:
+		
+		usable_paths = self.get_usable_paths(paths)
+		nb_paths = len(usable_paths)
+
+		for i, drone in enumerate(self.graph.drones):
+			drone.path = usable_paths[i % nb_paths]
+
