@@ -7,9 +7,9 @@ from connection import Connection
 class Map():
 	def __init__(
 			self, nb_drones: int, hubs: List[Dict],
-			connections: List[Dict], start_hub: Zone,
-			end_hub: Zone) -> None:
-		
+			connections: List[Dict], start_hub: Dict,
+			end_hub: Dict) -> None:
+
 		self.nb_drones = nb_drones 	   # int
 		self.hubs = hubs			   # Dict
 		self.connections = connections # List[dict[str, str]]

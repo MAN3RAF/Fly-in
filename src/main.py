@@ -1,11 +1,11 @@
-import pygame
+# import pygame
 
 from parser import Parser
 from graph import Graph
-from renderer import Renderer
+# from renderer import Renderer
 from algo import Algo
 
-pygame.init()
+# pygame.init()
 
 parser = Parser()
 
@@ -16,9 +16,9 @@ map_data = parser.parse_map(
 graph = Graph(map_data)
 algo = Algo()
 
-print(algo.get_all_paths(graph.zones, graph))
-
-
+paths = algo.get_all_paths(graph.zones, graph)
+# print(paths)
+print(algo.get_useable_paths(paths))
 
 
 # renderer = Renderer(graph)
