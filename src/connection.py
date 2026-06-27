@@ -9,4 +9,4 @@ class Connection():
 		self.max_capacity = max_capacity
 
 		zone_1.neighbors.add(zone_2)
-		zone_2.neighbors.add(zone_2)
+		zone_2.neighbors.add(zone_1)
