@@ -8,7 +8,6 @@ from graph import Graph
 
 class Algo():
 
-
 	def get_all_paths(self, zones:List[Zone], graph: Graph) -> List[List[Zone]]:
 
 		all_paths: List[List[Zone]] = []
