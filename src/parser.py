@@ -169,7 +169,10 @@ class Parser():
 			meta_data = meta_data.split()
 			for data in meta_data:
 				key, value = data.split("=")
-				hub[key] = int(value) if value.isdigit() else value
+				if key == "zone":
+					hub["type"] = int(value) if value.isdigit() else value
+				else:
+					hub[key] = int(value) if value.isdigit() else value
 
 		self.hubs.append(hub)
 

@@ -40,3 +40,14 @@ class Algo():
 		return all_paths
 
 
+	def get_cost(self, path: List[Zone]) -> int:
+
+		cost = 0
+
+		for p in path:
+			if p.type == "normal" or p.type == "priority":
+				cost += 1
+			elif p.type == "restricted":
+				cost += 2
+
+		return cost

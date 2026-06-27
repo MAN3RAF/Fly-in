@@ -10,13 +10,13 @@ pygame.init()
 parser = Parser()
 
 map_data = parser.parse_map(
-    "maps/easy/02_simple_fork.txt"
+    "maps/easy/01_linear_path.txt"
 )
 
 graph = Graph(map_data)
 algo = Algo()
 
-algo.get_all_paths(graph.zones, graph)
+print(algo.get_all_paths(graph.zones, graph))
 
 
 
