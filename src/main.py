@@ -3,58 +3,63 @@ import pygame
 from parser import Parser
 from graph import Graph
 from renderer import Renderer
-
+from algo import Algo
 
 pygame.init()
 
 parser = Parser()
 
 map_data = parser.parse_map(
-    "maps/easy/01_linear_path.txt"
+    "maps/easy/02_simple_fork.txt"
 )
 
 graph = Graph(map_data)
-graph.get_neighbors()
+algo = Algo()
 
-renderer = Renderer(graph)
-pygame.init()
+algo.get_all_paths(graph.zones, graph)
 
-screen = pygame.display.set_mode(
-    (1920, 1080),
-    pygame.RESIZABLE
-)
 
-renderer = Renderer(
-    graph,
-    1920,
-    1080
-)
 
-running = True
 
-while running:
+# renderer = Renderer(graph)
+# pygame.init()
 
-    for event in pygame.event.get():
+# screen = pygame.display.set_mode(
+#     (1920, 1080),
+#     pygame.RESIZABLE
+# )
 
-        if event.type == pygame.QUIT:
-            running = False
+# renderer = Renderer(
+#     graph,
+#     1920,
+#     1080
+# )
 
-        elif event.type == pygame.VIDEORESIZE:
+# running = True
 
-            screen = pygame.display.set_mode(
-                (event.w, event.h),
-                pygame.RESIZABLE
-            )
+# while running:
 
-            renderer.resize(
-                event.w,
-                event.h
-            )
+#     for event in pygame.event.get():
 
-    screen.fill((30, 30, 30))
+#         if event.type == pygame.QUIT:
+#             running = False
 
-    renderer.draw(screen)
+#         elif event.type == pygame.VIDEORESIZE:
 
-    pygame.display.flip()
+#             screen = pygame.display.set_mode(
+#                 (event.w, event.h),
+#                 pygame.RESIZABLE
+#             )
 
-pygame.quit()
+#             renderer.resize(
+#                 event.w,
+#                 event.h
+#             )
+
+#     screen.fill((30, 30, 30))
+
+#     renderer.draw(screen)
+
+#     pygame.display.flip()
+
+# pygame.quit()
