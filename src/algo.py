@@ -28,9 +28,7 @@ class Algo():
 				all_paths.append(path)
 				continue
 
-			neighbors = self.graph.get_neighbors(current_zone)
-
-			for neighbor in neighbors:
+			for neighbor in current_zone.neighbors:
 				if neighbor in path or neighbor.type == "blocked":
 					continue
 				queue.append(path + [neighbor])

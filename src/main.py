@@ -14,11 +14,11 @@ map_data = parser.parse_map(
 )
 
 graph = Graph(map_data)
-algo = Algo()
+algo = Algo(graph)
 
-paths = algo.get_all_paths(graph.zones, graph)
+paths = algo.get_all_paths(graph.zones)
 # print(paths)
-print(algo.get_useable_paths(paths))
+print(algo.get_usable_paths(paths))
 
 
 # renderer = Renderer(graph)

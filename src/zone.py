@@ -9,6 +9,7 @@ class Zone():
 		self.color = color
 		self.max_drones = max_drones
 		self.type = type
+		self.neighbors = set()
 
 
 	

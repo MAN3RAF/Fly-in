@@ -7,3 +7,6 @@ class Connection():
 		self.zone_1 = zone_1
 		self.zone_2 = zone_2
 		self.max_capacity = max_capacity
+
+		zone_1.neighbors.add(zone_2)
+		zone_2.neighbors.add(zone_2)
