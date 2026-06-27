@@ -14,7 +14,13 @@ class simulation():
         pass
 
 
-    # def get_next_zone(zones):
+    def get_next_zone(self, drone: Drone) -> Zone | None:
+        path = drone.path
+        for i, zone in enumerate(path[:-1]):  # exclude last zone, it has no next
+            if zone == drone.current_zone:
+                return path[i + 1]
+        return None
+    
 
 
 

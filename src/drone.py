@@ -9,7 +9,7 @@ class Drone():
 		self.id = id
 		self.current_zone = zone
 		self.steps = 0
-		self.path = path
+		self.path: List[Zone] = path
 		self.destination = destination
 		self.in_trasit = False
 
