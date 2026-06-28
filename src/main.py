@@ -4,12 +4,12 @@ from graph import Graph
 from renderer import Renderer
 from algo import Algo
 from simulation import Simulation
+import sys
 
 parser = Parser()
 
-map_data = parser.parse_map(
-    "maps/easy/01_linear_path.txt"
-)
+
+map_data = parser.parse_map(sys.argv[1])
 
 graph = Graph(map_data)
 algo = Algo(graph)
@@ -37,6 +37,7 @@ renderer = Renderer(
 )
 
 running = True
+tick = "0"
 
 while running:
 
@@ -49,6 +50,8 @@ while running:
                 running = False
             if event.key == pygame.K_SPACE:
                 sim.run_turn()
+                print(sim.current_turn)
+
 
         elif event.type == pygame.VIDEORESIZE:
 
@@ -63,6 +66,7 @@ while running:
             )
 
     screen.fill((36, 36, 36))
+
 
     renderer.draw(screen)
 

@@ -22,12 +22,13 @@ class Simulation:
 
     def assign_drones_path(self, paths: List[List[Zone]]) -> None:
         usable_paths = self.algo.get_usable_paths(paths)
+        # print(usable_paths)
         nb_paths = len(usable_paths)
 
         for i, drone in enumerate(self.graph.drones):
             drone.path = usable_paths[i % nb_paths]
 
-    def is_connection_available(self, drone: Drone, next_zone: Zone) -> bool:
+    def is_connection_available(self, drone: Drone, next_zone: Zone, connections: Dict[tuple[str, str], int]) -> bool:
 
         conn = [
             c for c in self.graph.connections 
@@ -35,14 +36,10 @@ class Simulation:
                (c.zone_2 == drone.current_zone and c.zone_1 == next_zone)
         ][0]
 
-        in_conn = sum(
-            1 for d in self.graph.drones 
-            if d.in_transit and (
-                (d.current_zone == conn.zone_1 and d.get_next_zone() == conn.zone_2) or
-                (d.current_zone == conn.zone_2 and d.get_next_zone() == conn.zone_1)
-            )
-        )
-        return in_conn < conn.max_capacity
+        connection_key = tuple(sorted([drone.current_zone.name, next_zone.name]))
+        current_traffic = connections.get(connection_key, 0)
+
+        return current_traffic < conn.max_capacity
 
     def is_zone_available(self, next_zone: Zone) -> bool:
         in_zone_only = sum(1 for d in self.graph.drones if d.current_zone == next_zone and (not d.in_transit))
@@ -56,6 +53,15 @@ class Simulation:
         Executes exactly ONE simulation turn with connection and zone caps.
         """
         output_parts: List[str] = []
+        connections: Dict[tuple[Zone, Zone], int] = {}
+
+        # create a connection to easy access to the conn and how much zones passed in it.
+        for drone in self.graph.drones:
+            if drone.in_transit:
+                nz = drone.get_next_zone()
+                if nz is not None:
+                    ckey = tuple(sorted([drone.current_zone.name, nz.name]))
+                    connections[ckey] = connections.get(ckey, 0) + 1
 
         for drone in self.graph.drones:
             if drone.in_transit:
@@ -70,15 +76,20 @@ class Simulation:
             if next_zone is None:
                 continue
 
-            conn_av = self.is_connection_available(drone, next_zone)
+            conn_av = self.is_connection_available(drone, next_zone, connections)
             zone_av = self.is_zone_available(next_zone)
 
             if (not drone.moved) and conn_av and zone_av:
+                ckey = tuple(sorted([drone.current_zone.name, next_zone.name]))
 
                 if next_zone.type == "restricted":
                     drone.in_transit = True
+                    connections[ckey] = connections.get(ckey, 0) + 1
                 else:
+                    connections[ckey] = connections.get(ckey, 0) + 1
                     drone.move()
+                    
+
 
                 # output_parts.append(f"D{drone.id}-{drone.current_zone.name}")
 
