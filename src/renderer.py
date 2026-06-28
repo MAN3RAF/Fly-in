@@ -92,6 +92,19 @@ class Renderer:
         except ValueError:
             return pygame.Color("white")
 
+    def scale_down(self, drone_image: pygame.Surface) -> pygame.Surface:
+
+        original_width, original_height = drone_image.get_size()
+
+        scale_factor = 0.04
+
+        new_width = int(original_width * scale_factor)
+        new_height = int(original_height * scale_factor)
+
+        scaled_drone = pygame.transform.scale(drone_image, (new_width, new_height))
+
+        return scaled_drone
+
     def draw(
         self,
         screen: pygame.Surface
@@ -110,6 +123,8 @@ class Renderer:
                 (x2, y2),
                 3
             )
+            # image = pygame.font.Font(None, 30).render(f"{conn.max_capacity}", True, (125, 0, 0))
+            # screen.blit(image, ((x1 + x2 / 2), (y1 + y2 / 2)))
 
         # Zones
         for zone in self.graph.zones:
@@ -131,6 +146,8 @@ class Renderer:
                 (x, y),
                 20
             )
+            image = pygame.font.Font(None, 30).render(f"{zone.name} - {zone.type}({zone.max_drones})", True, (255, 255, 255))
+            screen.blit(image, (x + 5, y + 20))
 
         # --- DRONES ADDITION ---
         for drone in self.graph.drones:
@@ -148,8 +165,14 @@ class Renderer:
             else:
                 drone_x, drone_y = self.to_screen(drone.current_zone)
 
-            # Draw outer outline circle, then inner colored core dot
-            pygame.draw.circle(screen, pygame.Color("black"), (drone_x, drone_y), 9)
-            pygame.draw.circle(screen, pygame.Color("cyan"), (drone_x, drone_y), 6)
-            image = pygame.font.Font(None, 50).render(f"{drone.id}", True, (255, 0, 0))
-            screen.blit(image, (drone_x, drone_y))
+            drone_image = pygame.image.load("drone.png").convert_alpha()
+            image = self.scale_down(drone_image)
+            image_rect = image.get_rect(center=(drone_x, drone_y))
+            screen.blit(image, (image_rect))
+
+            text_surface = pygame.font.Font(None, 50).render(f"{drone.id}", True, (255, 255, 255))
+            text_rect = text_surface.get_rect(center=(drone_x, drone_y))
+            screen.blit(text_surface, text_rect)
+
+
+

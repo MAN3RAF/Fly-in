@@ -30,7 +30,7 @@ while running:
 		if event.type == pygame.KEYDOWN:
 			if event.key == pygame.K_ESCAPE:
 				running = False
-	x += 1	
+	x += 1
 
 	clock.tick(20)
 	

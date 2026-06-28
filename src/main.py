@@ -8,7 +8,7 @@ from simulation import Simulation
 parser = Parser()
 
 map_data = parser.parse_map(
-    "maps/hard/01_maze_nightmare.txt"
+    "maps/easy/01_linear_path.txt"
 )
 
 graph = Graph(map_data)
@@ -62,7 +62,7 @@ while running:
                 event.h
             )
 
-    screen.fill((30, 30, 30))
+    screen.fill((36, 36, 36))
 
     renderer.draw(screen)
 

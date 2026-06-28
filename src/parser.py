@@ -40,6 +40,8 @@ class Map():
 				color = hub['color']
 			if 'max_drones' in hub:
 				max_drones = hub['max_drones']
+			if (not 'max_drones' in hub) and hub['name'] == 'goal':
+				max_drones = self.nb_drones
 			if 'type' in hub:
 				type = hub["type"]
 
