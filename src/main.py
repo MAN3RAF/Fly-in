@@ -1,65 +1,69 @@
-# import pygame
+import pygame
 
 from parser import Parser
 from graph import Graph
-# from renderer import Renderer
+from renderer import Renderer
 from algo import Algo
+from simulation import Simulation
 
-# pygame.init()
+pygame.init()
 
 parser = Parser()
 
 map_data = parser.parse_map(
-    "maps/easy/01_linear_path.txt"
+    "maps/easy/03_basic_capacity.txt"
 )
 
 graph = Graph(map_data)
 algo = Algo(graph)
+sim = Simulation(graph, algo)
 
 paths = algo.get_all_paths(graph.zones)
 # print(paths)
-print(algo.assign_drones(paths))
+sim.assign_drones_path(paths)
 
+for _ in graph.drones * 2:
+    print(sim.run_turn())
 
-# renderer = Renderer(graph)
-# pygame.init()
+renderer = Renderer(graph)
+pygame.init()
 
-# screen = pygame.display.set_mode(
-#     (1920, 1080),
-#     pygame.RESIZABLE
-# )
+screen = pygame.display.set_mode(
+    (1920, 1080),
+    pygame.RESIZABLE
+)
 
-# renderer = Renderer(
-#     graph,
-#     1920,
-#     1080
-# )
+renderer = Renderer(
+    graph,
+    1920,
+    1080
+)
 
-# running = True
+running = True
 
-# while running:
+while running:
 
-#     for event in pygame.event.get():
+    for event in pygame.event.get():
 
-#         if event.type == pygame.QUIT:
-#             running = False
+        if event.type == pygame.QUIT:
+            running = False
 
-#         elif event.type == pygame.VIDEORESIZE:
+        elif event.type == pygame.VIDEORESIZE:
 
-#             screen = pygame.display.set_mode(
-#                 (event.w, event.h),
-#                 pygame.RESIZABLE
-#             )
+            screen = pygame.display.set_mode(
+                (event.w, event.h),
+                pygame.RESIZABLE
+            )
 
-#             renderer.resize(
-#                 event.w,
-#                 event.h
-#             )
+            renderer.resize(
+                event.w,
+                event.h
+            )
 
-#     screen.fill((30, 30, 30))
+    screen.fill((30, 30, 30))
 
-#     renderer.draw(screen)
+    renderer.draw(screen)
 
-#     pygame.display.flip()
+    pygame.display.flip()
 
-# pygame.quit()
+pygame.quit()
