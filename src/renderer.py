@@ -1,7 +1,7 @@
 import pygame
+from typing import List, Dict, Any
 from zone import Zone
 from graph import Graph
-
 
 class Renderer:
     MARGIN = 50
@@ -132,4 +132,24 @@ class Renderer:
                 20
             )
 
-            
+        # --- DRONES ADDITION ---
+        for drone in self.graph.drones:
+            # Calculate position based on state
+            if drone.in_transit:
+                next_zone = drone.get_next_zone()
+                if next_zone is not None:
+                    x1, y1 = self.to_screen(drone.current_zone)
+                    x2, y2 = self.to_screen(next_zone)
+                    # Midpoint interpolation for flying transits
+                    drone_x = int((x1 + x2) / 2)
+                    drone_y = int((y1 + y2) / 2)
+                else:
+                    drone_x, drone_y = self.to_screen(drone.current_zone)
+            else:
+                drone_x, drone_y = self.to_screen(drone.current_zone)
+
+            # Draw outer outline circle, then inner colored core dot
+            pygame.draw.circle(screen, pygame.Color("black"), (drone_x, drone_y), 9)
+            pygame.draw.circle(screen, pygame.Color("cyan"), (drone_x, drone_y), 6)
+            image = pygame.font.Font(None, 50).render(f"{drone.id}", True, (255, 0, 0))
+            screen.blit(image, (drone_x, drone_y))

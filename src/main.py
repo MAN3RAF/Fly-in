@@ -1,17 +1,14 @@
 import pygame
-
 from parser import Parser
 from graph import Graph
 from renderer import Renderer
 from algo import Algo
 from simulation import Simulation
 
-pygame.init()
-
 parser = Parser()
 
 map_data = parser.parse_map(
-    "maps/easy/01_linear_path.txt"
+    "maps/hard/01_maze_nightmare.txt"
 )
 
 graph = Graph(map_data)
@@ -22,10 +19,10 @@ paths = algo.get_all_paths(graph.zones)
 # print(paths)
 sim.assign_drones_path(paths)
 
-for _ in graph.drones * 2:
-    print(sim.run_turn())
 
 renderer = Renderer(graph)
+
+
 pygame.init()
 
 screen = pygame.display.set_mode(
@@ -50,6 +47,8 @@ while running:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
+            if event.key == pygame.K_SPACE:
+                sim.run_turn()
 
         elif event.type == pygame.VIDEORESIZE:
 

@@ -14,7 +14,6 @@ class Drone:
         
         self.moved = False
         self.path_index = 0
-        self.steps = 0
         
         # Transit state tracking for restricted connections
         self.in_transit = False
@@ -31,6 +30,5 @@ class Drone:
         if next_zone is not None:
             self.current_zone = next_zone
             self.path_index += 1
-            self.steps += 1
 
 
