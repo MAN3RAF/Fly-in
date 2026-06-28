@@ -13,6 +13,12 @@ class Simulation:
         self.graph = graph
         self.current_turn = 0
         self.algo = algo
+
+        self.connection_lookup: dict[tuple[Zone, Zone], Connection] = {}
+
+        for conn in self.graph.connections:
+            self.connection_lookup[(conn.zone_1, conn.zone_2)] = conn
+            self.connection_lookup[(conn.zone_2, conn.zone_1)] = conn
     
     def assign_drones_path(self, paths: List[List[Zone]]) -> None:
         usable_paths = self.algo.get_usable_paths(paths)
@@ -20,62 +26,75 @@ class Simulation:
 
         for i, drone in enumerate(self.graph.drones):
             drone.path = usable_paths[i % nb_paths]
-			# print(f"{drone.id}: {[x.name for x in drone.path]} ")
-			# print()
+
+    def is_connection_available(
+            self, drone: Drone,
+            conn_capacity: dict[Connection, int]) -> bool:
+        
+        next_zone = drone.get_next_zone()
+        if next_zone is None:
+            return False
+
+        conn = self.connection_lookup.get((drone.current_zone, next_zone))
+        if conn is None:
+            return False
+
+        return conn_capacity[conn] < conn.max_capacity
+
+    def is_zone_available(
+            self, next_zone: Zone, 
+            zones_capacity: Dict[Zone, int]
+            ) -> bool:
+
+        if "goal" in next_zone.name:
+            return True
+        return zones_capacity[next_zone] < next_zone.max_drones
 
     def run_turn(self) -> str:
         """
-        Executes exactly ONE simulation turn.
-        Returns the formatted string for this turn (e.g., 'D1-zoneA D2-zoneB').
+        Executes exactly ONE simulation turn with connection and zone caps.
         """
-        # 1. Track current zone occupancies at the start of this turn
-        # Start and End hubs have infinite capacity, so we don't limit them.
-        occupancy: dict[Zone, int] = {zone: 0 for zone in self.graph.zones}
-        for drone in self.graph.drones:
-            occupancy[drone.current_zone] += 1
+        zones_capacity: Dict[Zone, int] = {zone: 0 for zone in self.graph.zones}
+        for d in self.graph.drones:
+            zones_capacity[d.current_zone] += 1
 
-        moving_drones: List[Drone] = []
+        conn_capacity: Dict[Connection, int] = {conn: 0 for conn in self.graph.connections}
         output_parts: List[str] = []
 
-        # 2. Phase 1: Determine which drones want to move and free up capacity immediately
+        for drone in self.graph.drones:
+            if drone.in_transit:
+                drone.in_transit = False
+                drone.move()
+                drone.moved = True
+
+            if drone.current_zone == drone.destination:
+                continue
+
+            next_zone = drone.get_next_zone()
+            if next_zone is not None and not drone.in_transit:
+                zones_capacity[drone.current_zone] -= 1
+
         for drone in self.graph.drones:
             next_zone = drone.get_next_zone()
-            if next_zone is not None:
-                # INSTANT CAPACITY RELEASE: 
-                # This drone plans to leave its current zone, so we subtract its capacity footprint right now.
-                # This allows an incoming drone to claim this slot during this exact same turn.
-                if drone.current_zone.name not in ("start", "goal"):
-                    occupancy[drone.current_zone] -= 1
-                moving_drones.append(drone)
+            if next_zone is None:
+                continue
 
-        # 3. Phase 2: Validate destinations against capacity rules
-        for drone in moving_drones:
-            next_zone = drone.get_next_zone()
-            
-            # Safe check: Is there room at the destination? (Or is it an infinite capacity hub?)
-            is_infinite_hub = "start" in next_zone.name or "goal" in next_zone.name
-            has_capacity = occupancy[next_zone] < next_zone.max_drones
+            conn_av = self.is_connection_available(drone, conn_capacity)
+            zone_av = self.is_zone_available(next_zone, zones_capacity)
 
-            if is_infinite_hub or has_capacity:
-                # Approve the move! Update our tracking occupancy mapping
-                if not is_infinite_hub:
-                    occupancy[next_zone] += 1
+            if (not drone.moved) and conn_av and zone_av:
+                conn = self.connection_lookup[(drone.current_zone, next_zone)]
+                conn_capacity[conn] += 1
 
-                # Format the output string block based on requirements
-                output_parts.append(f"D{drone.id}-{next_zone.name}")
-
-                # Execute the movement step on the drone object.
+                zones_capacity[next_zone] += 1
 
                 drone.move()
+                output_parts.append(f"D{drone.id}-{drone.current_zone.name}")
             else:
-                # CONGESTION MANAGEMENT: No space available. 
-                # The drone is forced to wait. Revert its freed capacity since it's staying.
-                if drone.current_zone.name not in ("start", "goal"):
-                    occupancy[drone.current_zone] += 1
+                zones_capacity[drone.current_zone] += 1
 
         self.current_turn += 1
         return " ".join(output_parts)
-    
 
 
 

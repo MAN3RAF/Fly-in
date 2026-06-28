@@ -12,12 +12,12 @@ class Drone:
         self.destination = destination
         self.path: list[Zone] = path
         
+        self.moved = False
         self.path_index = 0
         self.steps = 0
         
         # Transit state tracking for restricted connections
         self.in_transit = False
-        self.transit_turns_left = 0
 
     def get_next_zone(self) -> Zone | None:
         """Looks ahead to the next step in the assigned path."""
@@ -32,4 +32,5 @@ class Drone:
             self.current_zone = next_zone
             self.path_index += 1
             self.steps += 1
+
 

@@ -11,7 +11,7 @@ pygame.init()
 parser = Parser()
 
 map_data = parser.parse_map(
-    "maps/easy/03_basic_capacity.txt"
+    "maps/easy/01_linear_path.txt"
 )
 
 graph = Graph(map_data)
@@ -47,6 +47,9 @@ while running:
 
         if event.type == pygame.QUIT:
             running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
 
         elif event.type == pygame.VIDEORESIZE:
 
