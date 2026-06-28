@@ -146,7 +146,7 @@ class Renderer:
                 (x, y),
                 20
             )
-            image = pygame.font.Font(None, 30).render(f"{zone.name} - {zone.type}({zone.max_drones})", True, (255, 255, 255))
+            image = pygame.font.Font(None, 13).render(f"{zone.name} - {zone.type}({zone.max_drones})", True, (255, 255, 255))
             screen.blit(image, (x + 5, y + 20))
 
         # --- DRONES ADDITION ---
