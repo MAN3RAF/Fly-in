@@ -16,9 +16,14 @@ class Simulation:
 
         self.conn: dict[tuple[Zone, Zone], Connection] = {}
 
+        self.is_finish = False
+
         for c in self.graph.connections:
             self.conn[(c.zone_1, c.zone_2)] = c
             self.conn[(c.zone_2, c.zone_1)] = c
+
+    def is_finished(self) -> bool:
+        return all(drone.current_zone == drone.destination for drone in self.graph.drones)
 
     def assign_drones_path(self, paths: List[List[Zone]]) -> None:
         usable_paths = self.algo.get_usable_paths(paths)
@@ -68,6 +73,7 @@ class Simulation:
                 drone.in_transit = False
                 drone.move()
                 drone.moved = True
+                output_parts.append(f"D{drone.id}-{drone.current_zone.name}")
             if drone.current_zone == drone.destination:
                 continue
 
@@ -91,15 +97,19 @@ class Simulation:
                     
 
 
-                # output_parts.append(f"D{drone.id}-{drone.current_zone.name}")
+                output_parts.append(f"D{drone.id}-{drone.current_zone.name}")
 
             drone.moved = False
 
         self.current_turn += 1
         return " ".join(output_parts)
+    
+    def run(self):
+        if not self.is_finished():
+            print(self.run_turn())
+            # print(self.current_turn)
 
-    def is_finished(self) -> bool:
-        return all(drone.current_zone == drone.destination for drone in self.graph.drones)
+
 
 
 

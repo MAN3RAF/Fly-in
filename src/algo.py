@@ -56,7 +56,7 @@ class Algo():
         """Get usable most paths"""
 
         if not paths:
-            raise ValueError("[ERROR] No seable paths!")
+            raise ValueError("[ERROR] No usable paths!")
 
         sorted_paths = sorted(paths, key=lambda x: self.get_cost(x)) #sort by cost
 

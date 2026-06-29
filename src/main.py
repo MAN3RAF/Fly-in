@@ -19,8 +19,8 @@ paths = algo.get_all_paths(graph.zones)
 # print(paths)
 sim.assign_drones_path(paths)
 
-
-renderer = Renderer(graph)
+drone_image = pygame.image.load("drone.png")
+renderer = Renderer(graph, sim, drone_image)
 
 
 pygame.init()
@@ -30,14 +30,18 @@ screen = pygame.display.set_mode(
     pygame.RESIZABLE
 )
 
+font = pygame.font.Font(None, 48)
+
 renderer = Renderer(
     graph,
+    sim,
+    drone_image,
     1920,
     1080
 )
 
 running = True
-tick = "0"
+clock = pygame.time.Clock()
 
 while running:
 
@@ -49,9 +53,10 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
             if event.key == pygame.K_SPACE:
-                sim.run_turn()
-                print(sim.current_turn)
-
+                sim.run()
+        if event.type == pygame.MOUSEWHEEL:
+            renderer.zoom += event.y * 0.1
+            renderer.zoom = max(0.5, min(3.0, renderer.zoom))
 
         elif event.type == pygame.VIDEORESIZE:
 
@@ -65,11 +70,24 @@ while running:
                 event.h
             )
 
+    keys = pygame.key.get_pressed()
+    pan_speed = 10 * renderer.zoom
+    if keys[pygame.K_LEFT]:
+        renderer.pose_x += pan_speed
+    if keys[pygame.K_RIGHT]:
+        renderer.pose_x -= pan_speed
+    if keys[pygame.K_UP]:
+        renderer.pose_y += pan_speed
+    if keys[pygame.K_DOWN]:
+        renderer.pose_y -= pan_speed
+
     screen.fill((36, 36, 36))
 
 
-    renderer.draw(screen)
+    renderer.draw(screen, font)
 
     pygame.display.flip()
+
+    clock.tick(60)
 
 pygame.quit()

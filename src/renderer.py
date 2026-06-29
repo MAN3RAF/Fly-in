@@ -2,6 +2,7 @@ import pygame
 from typing import List, Dict, Any
 from zone import Zone
 from graph import Graph
+from simulation import Simulation
 
 class Renderer:
     MARGIN = 50
@@ -9,8 +10,10 @@ class Renderer:
     def __init__(
         self,
         graph: Graph,
+        sim: Simulation,
+        drone_image: pygame.Surface,
         width: int = 1920,
-        height: int = 1080
+        height: int = 1080,
     ) -> None:
 
         self.graph = graph
@@ -28,6 +31,14 @@ class Renderer:
         self.max_y = max(ys)
 
         self.compute_scale()
+
+        self.sim = sim
+
+        self.zoom = 1
+        self.pose_x = 0
+        self.pose_y = 0
+
+        self.drone_image = drone_image
 
     def compute_scale(self) -> None:
 
@@ -80,7 +91,7 @@ class Renderer:
             + self.height / 2
         )
 
-        return x, y
+        return x * self.zoom + self.pose_x, y * self.zoom + self.pose_y
 
     def get_color(
         self,
@@ -104,10 +115,16 @@ class Renderer:
         scaled_drone = pygame.transform.scale(drone_image, (new_width, new_height))
 
         return scaled_drone
+    
+    def draw_tick(self, font, screen):
+        text = font.render(f"Turns: {self.sim.current_turn}", True, (255, 255, 255))
+        screen.blit(text, (1, 1))
+
 
     def draw(
         self,
-        screen: pygame.Surface
+        screen: pygame.Surface,
+        font: pygame.font
     ) -> None:
 
         # Connections
@@ -121,7 +138,7 @@ class Renderer:
                 (255, 255, 255),
                 (x1, y1),
                 (x2, y2),
-                3
+                int(3 * self.zoom)
             )
             # image = pygame.font.Font(None, 30).render(f"{conn.max_capacity}", True, (125, 0, 0))
             # screen.blit(image, ((x1 + x2 / 2), (y1 + y2 / 2)))
@@ -137,16 +154,16 @@ class Renderer:
                 screen,
                 pygame.Color("white"),
                 (x, y),
-                22
+                22 * self.zoom
             )
 
             pygame.draw.circle(
                 screen,
                 zone_color,
                 (x, y),
-                20
+                20 * self.zoom
             )
-            image = pygame.font.Font(None, 13).render(f"{zone.name} - {zone.type}({zone.max_drones})", True, (255, 255, 255))
+            image = pygame.font.Font(None, 25).render(f"{zone.name})", True, (255, 255, 255))
             screen.blit(image, (x + 5, y + 20))
 
         # --- DRONES ADDITION ---
@@ -165,14 +182,15 @@ class Renderer:
             else:
                 drone_x, drone_y = self.to_screen(drone.current_zone)
 
-            drone_image = pygame.image.load("drone.png").convert_alpha()
-            image = self.scale_down(drone_image)
+            image = self.scale_down(self.drone_image)
             image_rect = image.get_rect(center=(drone_x, drone_y))
             screen.blit(image, (image_rect))
 
             text_surface = pygame.font.Font(None, 50).render(f"{drone.id}", True, (255, 255, 255))
             text_rect = text_surface.get_rect(center=(drone_x, drone_y))
             screen.blit(text_surface, text_rect)
+
+        self.draw_tick(font, screen)
 
 
 
