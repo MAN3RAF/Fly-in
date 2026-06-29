@@ -1,5 +1,5 @@
 import pygame
-from typing import List, Dict, Any
+from typing import List, Dict
 from zone import Zone
 from graph import Graph
 from simulation import Simulation
@@ -163,7 +163,7 @@ class Renderer:
                 (x, y),
                 20 * self.zoom
             )
-            image = pygame.font.Font(None, 25).render(f"{zone.name})", True, (255, 255, 255))
+            image = pygame.font.Font(None, 25).render(f"{zone.name}", True, (255, 255, 255))
             screen.blit(image, (x + 5, y + 20))
 
         # --- DRONES ADDITION ---

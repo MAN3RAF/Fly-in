@@ -1,10 +1,11 @@
 from collections import deque
-from typing import List, Dict, Any
+from typing import List, Dict
 from zone import Zone
 from drone import Drone
 from connection import Connection
 from parser import Map
 from graph import Graph
+from exceptions import PathNotFoundError
 
 class Algo():
     def __init__(self, graph:Graph):
@@ -56,7 +57,7 @@ class Algo():
         """Get usable most paths"""
 
         if not paths:
-            raise ValueError("[ERROR] No usable paths!")
+            raise PathNotFoundError("[ERROR] No usable paths!")
 
         sorted_paths = sorted(paths, key=lambda x: self.get_cost(x)) #sort by cost
 

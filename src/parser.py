@@ -1,7 +1,8 @@
-from typing import List, Dict, Any
+from typing import List, Dict
 from zone import Zone
 from drone import Drone
 from connection import Connection
+from exceptions import ParsingError
 
 
 class Map():
@@ -104,162 +105,239 @@ class Map():
 
 
 class Parser():
-	def __init__(self) -> None:
-		self.nb_drones: int = 0
-		self.hubs: List[Dict] = []
-		self.connections: List[Dict[str, str]] = []
-		self.start_hub: Dict = {}
-		self.end_hub: Dict = {}
+    def __init__(self) -> None:
+        self.nb_drones: int = 0
+        self.hubs: List[Dict] = []
+        self.connections: List[Dict[str, str]] = []
+        self.start_hub: Dict = {}
+        self.end_hub: Dict = {}
+        
+        # Validation trackers for VII.4 constraints
+        self.seen_names = set()
+        self.seen_connections = set()
+        self.start_count = 0
+        self.end_count = 0
 
+    def _validate_metadata(self, key: str, value: str, line_idx: int) -> None:
+        """Enforces type and capacity constraints on metadata."""
+        if key == "zone":
+            if value not in {"normal", "blocked", "restricted", "priority"}:
+                raise ParsingError(f"Line {line_idx}: Invalid zone type '{value}'. Must be normal, blocked, restricted, or priority.")
+        if key in ("max_drones", "max_link_capacity"):
+            if not value.isdigit() or int(value) <= 0:
+                raise ParsingError(f"Line {line_idx}: Capacity values must be positive integers. Got '{value}'.")
 
-	def parse_drones(self, line: str) -> None:
+    def _validate_name(self, name: str, line_idx: int) -> None:
+        """Enforces name uniqueness and character constraints."""
+        if "-" in name or " " in name:
+            raise ParsingError(f"Line {line_idx}: Zone name '{name}' contains invalid characters (no dashes or spaces allowed).")
+        if name in self.seen_names:
+            raise ParsingError(f"Line {line_idx}: Zone name '{name}' is not unique.")
+        self.seen_names.add(name)
 
-		_, second = line.split(":")
-		second = second.strip()
+    def parse_drones(self, line: str, line_idx: int) -> None:
+        if ":" not in line:
+            raise ParsingError(f"Line {line_idx}: Missing ':' separator in nb_drones line.")
+        _, second = line.split(":", 1)
+        second = second.strip()
 
-		if not second.isdigit():
-			raise ValueError("[ERROR] Invalid Number of drones!")
-		if int(second) < 1:
-			raise ValueError("[ERROR] Invalid Number of drones!")
+        if not second.isdigit() or int(second) < 1:
+            raise ParsingError(f"Line {line_idx}: nb_drones must be a positive integer.")
 
-		self.nb_drones = int(second)
+        self.nb_drones = int(second)
 
+    def parse_start(self, line: str, line_idx: int) -> None:
+        self.start_count += 1
+        if self.start_count > 1:
+            raise ParsingError(f"Line {line_idx}: Multiple start_hubs defined. Exactly one is required.")
 
-	def parse_start(self, line: str) -> None:
+        if '[' in line:
+            mandatory, meta_data = line.split("[", 1)
+        else:
+            mandatory = line
+            meta_data = ""
 
-		if '[' in line:
-			mandatory, meta_data = line.split("[")
-		else:
-			mandatory = line
-			meta_data = ""
+        items = mandatory.split()
+        if len(items) < 4:
+            raise ParsingError(f"Line {line_idx}: Malformed start_hub line. Missing name or coordinates.")
+            
+        hub: Dict = {}
+        hub["name"] = items[1]
+        self._validate_name(hub["name"], line_idx)
+        
+        if not items[2].replace('-', '', 1).isdigit() or not items[3].replace('-', '', 1).isdigit():
+            raise ParsingError(f"Line {line_idx}: Coordinates must be valid integers.")
+        hub["x"] = int(items[2])
+        hub["y"] = int(items[3])
 
-		# items: List = []
-		items = mandatory.split()
-		hub: Dict = {}
-		hub["name"] = items[1]
-		hub["x"] = int(items[2]) #Later parse
-		hub["y"] = int(items[3])	#Later parse
+        if meta_data:
+            meta_data = meta_data.strip("[]")
+            meta_data = meta_data.split()
+            for data in meta_data:
+                if "=" not in data:
+                    raise ParsingError(f"Line {line_idx}: Malformed metadata formatting near '{data}'.")
+                key, value = data.split("=", 1)
+                self._validate_metadata(key, value, line_idx)
+                if key == "zone":
+                    hub["type"] = value
+                else:
+                    hub[key] = int(value) if value.isdigit() else value
 
-		if meta_data:
-			meta_data = meta_data.strip("[]")
-			meta_data = meta_data.split()
-			for data in meta_data:
-				key, value = data.split("=")
-				hub[key] = int(value) if value.isdigit() else value
+        self.start_hub = hub
+        self.hubs.append(hub)
 
-		self.start_hub = hub
-		self.hubs.append(hub)
+    def parse_hub(self, line: str, line_idx: int) -> None:
+        if '[' in line:
+            mandatory, meta_data = line.split("[", 1)
+        else:
+            mandatory = line
+            meta_data = ""
 
+        items = mandatory.split()
+        if len(items) < 4:
+            raise ParsingError(f"Line {line_idx}: Malformed hub line. Missing name or coordinates.")
+            
+        hub: Dict = {}
+        hub["name"] = items[1]
+        self._validate_name(hub["name"], line_idx)
+        
+        if not items[2].replace('-', '', 1).isdigit() or not items[3].replace('-', '', 1).isdigit():
+            raise ParsingError(f"Line {line_idx}: Coordinates must be valid integers.")
+        hub["x"] = int(items[2])
+        hub["y"] = int(items[3])
 
-	def parse_hub(self, line: str) -> None:
-		
-		if '[' in line:
-			mandatory, meta_data = line.split("[")
-		else:
-			mandatory = line
-			meta_data = ""
+        if meta_data:
+            meta_data = meta_data.strip("[]")
+            meta_data = meta_data.split()
+            for data in meta_data:
+                if "=" not in data:
+                    raise ParsingError(f"Line {line_idx}: Malformed metadata formatting near '{data}'.")
+                key, value = data.split("=", 1)
+                self._validate_metadata(key, value, line_idx)
+                if key == "zone":
+                    hub["type"] = value
+                else:
+                    hub[key] = int(value) if value.isdigit() else value
 
-		# items: List = []
-		items = mandatory.split()
-		hub: Dict = {}
-		hub["name"] = items[1]
-		hub["x"] = int(items[2]) #Later parse
-		hub["y"] = int(items[3]) #Later parse
+        self.hubs.append(hub)
 
-		if meta_data:
-			meta_data = meta_data.strip("[]")
-			meta_data = meta_data.split()
-			for data in meta_data:
-				key, value = data.split("=")
-				if key == "zone":
-					hub["type"] = int(value) if value.isdigit() else value
-				else:
-					hub[key] = int(value) if value.isdigit() else value
+    def parse_end(self, line: str, line_idx: int) -> None:
+        self.end_count += 1
+        if self.end_count > 1:
+            raise ParsingError(f"Line {line_idx}: Multiple end_hubs defined. Exactly one is required.")
 
-		self.hubs.append(hub)
+        if '[' in line:
+            mandatory, meta_data = line.split("[", 1)
+        else:
+            mandatory = line
+            meta_data = ""
 
+        items = mandatory.split()
+        if len(items) < 4:
+            raise ParsingError(f"Line {line_idx}: Malformed end_hub line. Missing name or coordinates.")
+            
+        hub: Dict = {}
+        hub["name"] = items[1]
+        self._validate_name(hub["name"], line_idx)
+        
+        if not items[2].replace('-', '', 1).isdigit() or not items[3].replace('-', '', 1).isdigit():
+            raise ParsingError(f"Line {line_idx}: Coordinates must be valid integers.")
+        hub["x"] = int(items[2])
+        hub["y"] = int(items[3])
 
-	def parse_end(self, line: str) -> None:
-		
-		if '[' in line:
-			mandatory, meta_data = line.split("[")
-		else:
-			mandatory = line
-			meta_data = ""
+        if meta_data:
+            meta_data = meta_data.strip("[]")
+            meta_data = meta_data.split()
+            for data in meta_data:
+                if "=" not in data:
+                    raise ParsingError(f"Line {line_idx}: Malformed metadata formatting near '{data}'.")
+                key, value = data.split("=", 1)
+                self._validate_metadata(key, value, line_idx)
+                if key == "zone":
+                    hub["type"] = value
+                else:
+                    hub[key] = int(value) if value.isdigit() else value
 
-		# items: List = []
-		items = mandatory.split()
-		hub: Dict = {}
-		hub["name"] = items[1]
-		hub["x"] = int(items[2]) #Later parse
-		hub["y"] = int(items[3]) #Later parse
+        self.end_hub = hub
+        self.hubs.append(hub)
 
-		if meta_data:
-			meta_data = meta_data.strip("[]")
-			meta_data = meta_data.split()
-			for data in meta_data:
-				key, value = data.split("=")
-				hub[key] = int(value) if value.isdigit() else value
+    def parse_connection(self, line: str, line_idx: int):
+        if '[' in line:
+            mandatory, meta_data = line.split("[", 1)
+        else:
+            mandatory = line
+            meta_data = ""
 
-		self.end_hub = hub
-		self.hubs.append(hub)
+        tokens = mandatory.split()
+        if len(tokens) < 2:
+            raise ParsingError(f"Line {line_idx}: Connection details are missing.")
+        
+        value = tokens[1]
+        if "-" not in value:
+            raise ParsingError(f"Line {line_idx}: Connection missing expected '-' separator notation.")
+            
+        items = value.split("-", 1)
+        source, target = items[0], items[1]
+        
+        if source not in self.seen_names or target not in self.seen_names:
+            raise ParsingError(f"Line {line_idx}: Connection links an undefined zone ('{source}' or '{target}').")
 
+        # Handle duplicates bidirectionally via sorted tuple key validation
+        conn_key = tuple(sorted([source, target]))
+        if conn_key in self.seen_connections:
+            raise ParsingError(f"Line {line_idx}: Connection between '{source}' and '{target}' is a duplicate.")
+        self.seen_connections.add(conn_key)
 
-	def parse_connection(self, line: str):
+        conn: Dict = {}
+        conn[source] = target 
 
-		if '[' in line:
-			mandatory, meta_data = line.split("[")
-		else:
-			mandatory = line
-			meta_data = ""
+        if meta_raw := meta_data:
+            meta_raw = meta_raw.strip("[]")
+            meta_raw = meta_raw.split()
+            for data in meta_raw:
+                if "=" not in data:
+                    raise ParsingError(f"Line {line_idx}: Malformed metadata formatting near '{data}'.")
+                key, val = data.split("=", 1)
+                self._validate_metadata(key, val, line_idx)
+                conn[key] = int(val) if val.isdigit() else val
 
-		# items: List = []
-		_, value = mandatory.split()
-		items = value.split("-")
-		conn: Dict = {}
-		conn[items[0]] = items[1] #Later parse
+        self.connections.append(conn)
 
-		if meta_data:
-			meta_data = meta_data.strip("[]")
-			meta_data = meta_data.split()
-			for data in meta_data:
-				key, value = data.split("=")
-				conn[key] = int(value) if value.isdigit() else value
+    def parse_map(self, path: str) -> Map:
+        line_idx = 0
+        has_parsed_drones = False
 
-		self.connections.append(conn)
+        with open(path, 'r') as fp:
+            for line in fp:
+                line_idx += 1
+                line: str = line.strip()
 
+                if line.startswith("#") or not line:
+                    continue
 
-	def parse_map(self, path: str) -> Map:
+                if not has_parsed_drones:
+                    if line.startswith("nb_drones:"):
+                        self.parse_drones(line, line_idx)
+                        has_parsed_drones = True
+                        continue
+                    else:
+                        raise ParsingError(f"Line {line_idx}: Structural error. 'nb_drones:' must appear on the first line.")
 
-		i = 0
-		with open(path, 'r') as fp:
-			for line in fp:
-				line: str = line.strip()
+                if line.startswith("start_hub:"):
+                    self.parse_start(line, line_idx)
+                elif line.startswith("hub:"):
+                    self.parse_hub(line, line_idx)
+                elif line.startswith("end_hub:"):
+                    self.parse_end(line, line_idx)
+                elif line.startswith("connection:"):
+                    self.parse_connection(line, line_idx)
+                else:
+                    raise ParsingError(f"Line {line_idx}: Unrecognized prefix syntax structure: '{line}'")
 
-				if line.startswith("#") or not line:
-					continue
+        if self.start_count != 1 or self.end_count != 1:
+            raise ParsingError("Parsing Error: Map must contain exactly one 'start_hub:' and one 'end_hub:'.")
 
-				if i == 0 and line.startswith("nb_drones:"):
-					self.parse_drones(line)
-				elif i == 0 and not line.startswith("nb_drones:"):
-					raise ValueError("[ERROR] nb_drones was not found!")
+        map = Map(self.nb_drones, self.hubs, self.connections, self.start_hub, self.end_hub)
+        map.init_map()
 
-				if line.startswith("start_hub:"):
-					self.parse_start(line)
-					
-				
-				if line.startswith("hub:"):
-					self.parse_hub(line)
-				
-				if line.startswith("end_hub:"):
-					self.parse_end(line)
-				
-				if line.startswith("connection:"):
-					self.parse_connection(line)
-
-				i += 1
-
-		map = Map(self.nb_drones, self.hubs, self.connections, self.start_hub, self.end_hub)
-		map.init_map()
-
-		return map
+        return map

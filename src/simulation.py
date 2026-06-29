@@ -1,5 +1,5 @@
 from collections import deque
-from typing import List, Dict, Any
+from typing import List, Dict
 from zone import Zone
 from drone import Drone
 from connection import Connection
@@ -35,11 +35,7 @@ class Simulation:
 
     def is_connection_available(self, drone: Drone, next_zone: Zone, connections: Dict[tuple[str, str], int]) -> bool:
 
-        conn = [
-            c for c in self.graph.connections 
-            if (c.zone_1 == drone.current_zone and c.zone_2 == next_zone) or 
-               (c.zone_2 == drone.current_zone and c.zone_1 == next_zone)
-        ][0]
+        conn = self.get_current_connection(drone, next_zone)
 
         connection_key = tuple(sorted([drone.current_zone.name, next_zone.name]))
         current_traffic = connections.get(connection_key, 0)
@@ -52,6 +48,18 @@ class Simulation:
         in_transit = sum(1 for d in self.graph.drones if d.in_transit and d.get_next_zone() == next_zone)
         
         return (in_zone_only + in_transit) < next_zone.max_drones
+    
+    def get_current_connection(self, drone: Drone, next_zone: Zone) -> Connection:
+
+        conn = [
+            c for c in self.graph.connections 
+            if (c.zone_1 == drone.current_zone and c.zone_2 == next_zone) or 
+               (c.zone_2 == drone.current_zone and c.zone_1 == next_zone)
+        ]
+        if conn:
+            return conn[0]
+
+        return None
 
     def run_turn(self) -> str:
         """
@@ -70,10 +78,12 @@ class Simulation:
 
         for drone in self.graph.drones:
             if drone.in_transit:
+                next_zone = drone.get_next_zone()
+                conn = self.get_current_connection(drone, next_zone)
                 drone.in_transit = False
                 drone.move()
                 drone.moved = True
-                output_parts.append(f"D{drone.id}-{drone.current_zone.name}")
+                output_parts.append(f"D{drone.id}-{conn.zone_1}-{conn.zone_2}")
             if drone.current_zone == drone.destination:
                 continue
 
@@ -97,7 +107,7 @@ class Simulation:
                     
 
 
-                output_parts.append(f"D{drone.id}-{drone.current_zone.name}")
+                output_parts.append(f"D{drone.id}-{next_zone.name}")
 
             drone.moved = False
 
@@ -108,10 +118,3 @@ class Simulation:
         if not self.is_finished():
             print(self.run_turn())
             # print(self.current_turn)
-
-
-
-
-
-
-

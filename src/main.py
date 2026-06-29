@@ -6,6 +6,7 @@ from algo import Algo
 from simulation import Simulation
 import sys
 
+
 parser = Parser()
 
 
