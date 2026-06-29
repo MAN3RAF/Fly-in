@@ -1,5 +1,5 @@
 import pygame
-from parser import Parser
+from parser import InputParser
 from graph import Graph
 from renderer import Renderer
 from algo import Algo
@@ -7,7 +7,7 @@ from simulation import Simulation
 import sys
 
 
-parser = Parser()
+parser = InputParser()
 
 
 map_data = parser.parse_map(sys.argv[1])
