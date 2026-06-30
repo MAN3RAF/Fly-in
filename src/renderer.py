@@ -98,10 +98,10 @@ class Renderer:
         zone: Zone
     ) -> pygame.Color:
 
-        try:
-            return pygame.Color(zone.color)
-        except ValueError:
-            return pygame.Color("white")
+        # try:
+        return pygame.Color(zone.color)
+        # except ValueError:
+        #     return pygame.Color("white")
 
     def scale_down(self, drone_image: pygame.Surface) -> pygame.Surface:
 
