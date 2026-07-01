@@ -12,8 +12,8 @@ class Map():
                     connections: List[Dict], start_hub: Dict,
                     end_hub: Dict) -> None:
 
-            self.nb_drones = nb_drones         # int
-            self.hubs = hubs                           # Dict
+            self.nb_drones = nb_drones # int
+            self.hubs = hubs # Dict
             self.connections = connections # List[dict[str, str]]
             self.zones: List[Zone] = []
             self.start_hub: Dict = start_hub
@@ -101,7 +101,7 @@ class Map():
                             if self.start_hub['name'] == zone.name:
                                     start_zone: Zone = zone
                     for zone in self.zones:
-                            if "goal" in zone.name:
+                            if self.end_hub['name'] == zone.name:
                                     end_zone = zone
 
 
@@ -124,31 +124,29 @@ class InputParser():
     def parse_drones(self, line: str) -> None:
 
         parts = line.split()
-        
-        if not parts[0] == "nb_drones:":
-            raise ParsingError("Invalid nb_drones.")
 
         if len(parts) != 2:
             raise ParsingError(
-                f"Invalid nb_drones format. Expected 'nb_drones: <number>'.")
+                "Invalid nb_drones format. Expected 'nb_drones: <number>'.")
+
+        if not parts[0] == "nb_drones:":
+            raise ParsingError("Invalid nb_drones.")
 
         value = parts[1].strip()
-
 
         try:
             int(value)
         except:
             raise ParsingError(
-                f"nb_drones must be a positive integer."
+                "nb_drones must be a positive integer."
             )
 
         if int(value) < 1:
             raise ParsingError(
-                f"nb_drones must be a positive integer."
+                "nb_drones must be a positive integer."
             )
 
         self.nb_drones = int(value)
-
 
     def parse_start(self, line: str) -> None:
 
@@ -278,13 +276,6 @@ class InputParser():
                     "Zone names must be unique."
                 )
 
-        if (x, y) in self.coords:
-            raise ParsingError(
-                "Zone coordinates must be unique."
-            )
-        else:
-            self.coords.append((x, y))
-
         try:
             x = float(x)
         except:
@@ -298,6 +289,13 @@ class InputParser():
             raise ParsingError(
                 "The y coordinate must be a valid number."
             )
+        
+        if (x, y) in self.coords:
+            raise ParsingError(
+                "Zone coordinates must be unique."
+            )
+        else:
+            self.coords.append((x, y))
 
         hub: Dict = {}
         hub["name"] = items[1]
@@ -567,6 +565,11 @@ class InputParser():
                             "'max_drones' must be a positive integer."
                         )
 
+                if int(value) < self.nb_drones:
+                        raise ParsingError(
+                            "'max_drones' cannot be smaller than the number of drones."
+                        )
+
                 elif key == "color":
                     try:
                         pygame.Color(value)
@@ -774,7 +777,10 @@ class InputParser():
                         has_parsed_drones = True
                         continue
                     else:
-                        raise ParsingError(f"'nb_drones: <nuber>' must appear on the first line.")
+                        raise ParsingError("'nb_drones: <number>' must appear on the first line.")
+                elif line.startswith("nb_drones:"):
+                    raise ParsingError("nb_drones has already been defined.")
+
 
                 if line.startswith("start_hub:"):
                     self.parse_start(line)
