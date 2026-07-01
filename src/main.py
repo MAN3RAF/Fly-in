@@ -1,96 +1,57 @@
-# import pygame
-from parser import InputParser
-# from graph import Graph
-# from renderer import Renderer
-# from algo import Algo
-# from simulation import Simulation
 import sys
 
+import pygame
 
-parser = InputParser()
-
-
-map_data = parser.parse_map(sys.argv[1])
-
-print("Good!")
-
-# graph = Graph(map_data)
-# algo = Algo(graph)
-# sim = Simulation(graph, algo)
-
-# paths = algo.get_all_paths(graph.zones)
-# # print(paths)
-# sim.assign_drones_path(paths)
-
-# drone_image = pygame.image.load("drone.png")
-# renderer = Renderer(graph, sim, drone_image)
+from algo import Algo
+from graph import Graph
+from parser import InputParser
+from renderer import Renderer
+from simulation import Simulation
+from typing import List
 
 
-# pygame.init()
+class MainProgram:
+    def __init__(self, argv: List[str]) -> None:
+        self.argv = argv
+        self.path = ""
 
-# screen = pygame.display.set_mode(
-#     (1920, 1080),
-#     pygame.RESIZABLE
-# )
+        if len(self.argv) != 2:
+            if len(self.argv) == 1:
+                self.path = "".join(
+                    "maps/challenger/01_the_impossible_dream.txt")
+            else:
+                raise ValueError("Input must be exactly 2 arguments.")
 
-# font = pygame.font.Font(None, 48)
+        else:
+            self.path = "".join(argv[1])
 
-# renderer = Renderer(
-#     graph,
-#     sim,
-#     drone_image,
-#     1920,
-#     1080
-# )
+    def main(self):
 
-# running = True
-# clock = pygame.time.Clock()
+        parser = InputParser()
+        map_data = parser.parse_map(self.path)
+        
+        graph = Graph(map_data)
+        algo = Algo(graph)
+        sim = Simulation(graph, algo)
 
-# while running:
+        paths = algo.get_all_paths(graph.zones)
+        sim.assign_drones_path(paths)
 
-#     for event in pygame.event.get():
+        drone_image = pygame.image.load("drone.png")
 
-#         if event.type == pygame.QUIT:
-#             running = False
-#         if event.type == pygame.KEYDOWN:
-#             if event.key == pygame.K_ESCAPE:
-#                 running = False
-#             if event.key == pygame.K_SPACE:
-#                 sim.run()
-#         if event.type == pygame.MOUSEWHEEL:
-#             renderer.zoom += event.y * 0.1
-#             renderer.zoom = max(0.5, min(3.0, renderer.zoom))
-
-#         elif event.type == pygame.VIDEORESIZE:
-
-#             screen = pygame.display.set_mode(
-#                 (event.w, event.h),
-#                 pygame.RESIZABLE
-#             )
-
-#             renderer.resize(
-#                 event.w,
-#                 event.h
-#             )
-
-#     keys = pygame.key.get_pressed()
-#     pan_speed = 10 * renderer.zoom
-#     if keys[pygame.K_LEFT]:
-#         renderer.pose_x += pan_speed
-#     if keys[pygame.K_RIGHT]:
-#         renderer.pose_x -= pan_speed
-#     if keys[pygame.K_UP]:
-#         renderer.pose_y += pan_speed
-#     if keys[pygame.K_DOWN]:
-#         renderer.pose_y -= pan_speed
-
-#     screen.fill((36, 36, 36))
+        renderer = Renderer(
+            graph,
+            sim,
+            drone_image,
+            1920,
+            1080,
+        )
+        renderer.fly_the_drones(sim)
 
 
-#     renderer.draw(screen, font)
-
-#     pygame.display.flip()
-
-#     clock.tick(60)
-
-# pygame.quit()
+if __name__ == "__main__":
+    try:
+        m = MainProgram(sys.argv)
+        m.main()
+    except Exception as e:
+        print(f"Error: {e}")

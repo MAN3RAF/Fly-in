@@ -4,17 +4,17 @@ from zone import Zone
 class Drone:
     def __init__(
         self, id: int, zone: Zone,
-        path: list[Zone], destination: Zone
+        path: List[Zone], destination: Zone
     ) -> None:
         
         self.id = id
         self.current_zone = zone
         self.destination = destination
-        self.path: list[Zone] = path
-        
+        self.path: List[Zone] = path
+
         self.moved = False
         self.path_index = 0
-        
+
         # Transit state tracking for restricted connections
         self.in_transit = False
 
@@ -30,5 +30,3 @@ class Drone:
         if next_zone is not None:
             self.current_zone = next_zone
             self.path_index += 1
-
-

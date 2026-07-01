@@ -1,4 +1,3 @@
-from collections import deque
 from typing import List, Dict
 from zone import Zone
 from drone import Drone
@@ -27,7 +26,7 @@ class Simulation:
 
     def assign_drones_path(self, paths: List[List[Zone]]) -> None:
         usable_paths = self.algo.get_usable_paths(paths)
-        # print(usable_paths)
+
         nb_paths = len(usable_paths)
 
         for i, drone in enumerate(self.graph.drones):
@@ -83,7 +82,7 @@ class Simulation:
                 drone.in_transit = False
                 drone.move()
                 drone.moved = True
-                output_parts.append(f"D{drone.id}-{conn.zone_1}-{conn.zone_2}")
+                output_parts.append(f"D{drone.id}-{conn.zone_1.name}-{conn.zone_2.name}")
             if drone.current_zone == drone.destination:
                 continue
 
@@ -104,8 +103,6 @@ class Simulation:
                 else:
                     connections[ckey] = connections.get(ckey, 0) + 1
                     drone.move()
-                    
-
 
                 output_parts.append(f"D{drone.id}-{next_zone.name}")
 
@@ -117,4 +114,3 @@ class Simulation:
     def run(self):
         if not self.is_finished():
             print(self.run_turn())
-            # print(self.current_turn)

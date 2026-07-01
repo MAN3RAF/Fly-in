@@ -1,9 +1,6 @@
 from collections import deque
 from typing import List, Dict
 from zone import Zone
-from drone import Drone
-from connection import Connection
-from parser import Map
 from graph import Graph
 from exceptions import PathNotFoundError
 
@@ -35,7 +32,6 @@ class Algo():
                     continue
                 queue.append(path + [neighbor])
 
-        # print(all_paths)
         return all_paths
 
 
@@ -61,16 +57,6 @@ class Algo():
 
         sorted_paths = sorted(paths, key=lambda x: self.get_cost(x)) #sort by cost
 
-        # print(sorted_paths[0])
-        
-        # cheapest_cost = self.get_cost(sorted_paths[0])
         best_turn_cost = self.get_cost(sorted_paths[0])
-        
-        # 3. Return ALL paths that share this optimal minimum turn cost.
-        # This gives your drone fleet multiple distinct lanes if they exist, 
-        # but ensures nobody wastes time taking a longer route.
-        # print([path for path in sorted_paths if self.get_cost(path) == best_turn_cost])
 
         return [path for path in sorted_paths if self.get_cost(path) <= best_turn_cost + 1]
-
-

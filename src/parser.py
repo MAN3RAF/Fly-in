@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict
 from zone import Zone
 from drone import Drone
 from connection import Connection
@@ -41,11 +41,16 @@ class Map():
                     if 'color' in hub:
                             color = hub['color']
                     if 'max_drones' in hub:
-                            max_drones = hub['max_drones']
+                        max_drones = hub['max_drones']
                     if (not 'max_drones' in hub) and hub['name'] == self.end_hub['name']:
                             max_drones = self.nb_drones
                     if 'type' in hub:
                             type = hub["type"]
+
+                    if hub['name'] == self.start_hub['name']:
+                        max_drones = self.nb_drones
+                    elif hub['name'] == self.end_hub['name']:
+                        max_drones = self.nb_drones
 
                     zone = Zone(name, coords, color, max_drones, type)
 
@@ -60,7 +65,6 @@ class Map():
                     zone.name: zone
                     for zone in self.zones
             }
-            # print(self.connections)
 
             for conn in self.connections:
                     source_name: str | None = None
@@ -70,16 +74,10 @@ class Map():
                             if key == "max_link_capacity":
                                     continue
                             
-                            # print(key, value)
-
                             source_name = key
                             target_name = value
                             break
 
-                    # if source_name is None or target_name is None:
-                    #       raise ValueError(f"Invalid connection: {conn}")
-
-                    # print(zones_by_name)
                     source_zone = zones_by_name[source_name]
                     target_zone = zones_by_name[target_name]
 
@@ -248,6 +246,8 @@ class InputParser():
                         )
 
                 elif key == "color":
+                    if value == "rainbow":
+                        break
                     try:
                         pygame.Color(value)
                     except:
@@ -403,6 +403,8 @@ class InputParser():
                         )
 
                 elif key == "color":
+                    if value == "rainbow":
+                        break
                     try:
                         pygame.Color(value)
                     except:
@@ -564,13 +566,14 @@ class InputParser():
                         raise ParsingError(
                             "'max_drones' must be a positive integer."
                         )
-
-                if int(value) < self.nb_drones:
+                    if int(value) < self.nb_drones:
                         raise ParsingError(
                             "'max_drones' cannot be smaller than the number of drones."
                         )
 
                 elif key == "color":
+                    if value == "rainbow":
+                        break
                     try:
                         pygame.Color(value)
                     except:
@@ -793,8 +796,6 @@ class InputParser():
                 else:
                     raise ParsingError(f"Unrecognized prefix syntax structure: '{line}'")
 
-        # if self.start_count != 1 or self.end_count != 1:
-        #     raise ParsingError("Parsing Error: Map must contain exactly one 'start_hub:' and one 'end_hub:'.")
         if not self.start_hub:
               raise ParsingError("No Start_hub was provided.")
         if not self.end_hub:
@@ -804,5 +805,3 @@ class InputParser():
         map.init_map()
 
         return map
-
-
