@@ -16,8 +16,8 @@ class Map():
             self.hubs = hubs                           # Dict
             self.connections = connections # List[dict[str, str]]
             self.zones: List[Zone] = []
-            self.start_hub: Zone = start_hub
-            self.end_hub: Zone = end_hub
+            self.start_hub: Dict = start_hub
+            self.end_hub: Dict = end_hub
             self.connects: List[Connection] = []
             self.drones: List[Drone] = []
 
@@ -42,7 +42,7 @@ class Map():
                             color = hub['color']
                     if 'max_drones' in hub:
                             max_drones = hub['max_drones']
-                    if (not 'max_drones' in hub) and hub['name'] == 'goal':
+                    if (not 'max_drones' in hub) and hub['name'] == self.end_hub['name']:
                             max_drones = self.nb_drones
                     if 'type' in hub:
                             type = hub["type"]
@@ -60,6 +60,7 @@ class Map():
                     zone.name: zone
                     for zone in self.zones
             }
+            # print(self.connections)
 
             for conn in self.connections:
                     source_name: str | None = None
@@ -68,6 +69,8 @@ class Map():
                     for key, value in conn.items():
                             if key == "max_link_capacity":
                                     continue
+                            
+                            # print(key, value)
 
                             source_name = key
                             target_name = value
@@ -76,6 +79,7 @@ class Map():
                     # if source_name is None or target_name is None:
                     #       raise ValueError(f"Invalid connection: {conn}")
 
+                    # print(zones_by_name)
                     source_zone = zones_by_name[source_name]
                     target_zone = zones_by_name[target_name]
 
@@ -94,7 +98,7 @@ class Map():
 
             for i in range(0, self.nb_drones):
                     for zone in self.zones:
-                            if "start" in zone.name:
+                            if self.start_hub['name'] == zone.name:
                                     start_zone: Zone = zone
                     for zone in self.zones:
                             if "goal" in zone.name:
@@ -114,6 +118,7 @@ class InputParser():
             self.connections: List[Dict[str, str]] = []
             self.start_hub: Dict = None
             self.end_hub: Dict = None
+            self.coords: List[tuple] = []
 
 
     def parse_drones(self, line: str) -> None:
@@ -148,19 +153,17 @@ class InputParser():
     def parse_start(self, line: str) -> None:
 
         if self.start_hub:
-            raise ParsingError("start zone allreay defined") #have to be edited
-        
+            raise ParsingError("Start hub has already been defined.")
+
         mandatory = line
         meta_data = ""
+        seen_keys = set()
 
-        if "[" not in line and "]" not in line: #if there is no meta data pass.
+        if "[" not in line and "]" not in line:
             pass
 
         elif "[" not in line or "]" not in line:
-            raise ParsingError("Metadata must be enclosed in '[' and ']'.")
-
-        # elif line.count("[") != 1 or line.count("]") != 1:
-        #     raise ParsingError("Only one metadata block is allowed.")
+            raise ParsingError("Metadata block must start with '[' and end with ']'.")
 
         else:
 
@@ -181,81 +184,132 @@ class InputParser():
             close_idx = line.index("]")
 
             if open_idx > close_idx:
-                raise ParsingError("'[' must come before ']'.")
+                raise ParsingError("Opening '[' must appear before closing ']'.")
 
             if close_idx != len(line) - 1:
-                raise ParsingError("Unexpected characters after metadata.")
+                raise ParsingError("Unexpected characters found after the metadata block.")
+
             if line[open_idx - 1] != ' ':
-                  raise ParsingError("Invalid metadata format")
+                raise ParsingError("Metadata block must be preceded by a space.")
 
             mandatory = line[:open_idx].strip()
             meta_data = line[open_idx + 1:close_idx]
 
             if meta_data.strip() == "":
                 raise ParsingError("Metadata block cannot be empty.")
-            
+
             for data in meta_data.split():
+
                 if "=" not in data:
-                    raise ParsingError(f"Invalid metadata.")
+                    raise ParsingError(
+                        "Invalid metadata entry. Expected the format 'key=value'."
+                    )
+
+                if data.count("=") != 1:
+                    raise ParsingError(
+                        f"Invalid metadata entry '{data}'. Expected exactly one '='."
+                    )
 
                 key, value = data.split("=")
 
                 if key not in valid_keys:
-                    raise ParsingError(f"Invalid metadata key.")
+                    raise ParsingError(
+                        f"Unknown metadata key '{key}'."
+                    )
+                if key in seen_keys:
+                    raise ParsingError(f"Duplicate metadata key '{key}'.")
+
+                seen_keys.add(key)
 
                 if value == "":
-                    raise ParsingError(f"Invalid metadata.")
+                    raise ParsingError(
+                        f"Metadata key '{key}' is missing a value."
+                    )
 
                 if key == "zone":
                     if value not in valid_zones:
-                        raise ParsingError(f"Invalid zone.")
+                        raise ParsingError(
+                            f"Invalid zone type '{value}'. "
+                            "Expected one of: normal, restricted, blocked, priority."
+                        )
+
+                    if value == "blocked":
+                        raise ParsingError(
+                            "The start hub cannot have zone type 'blocked'."
+                        )
 
                 elif key == "max_drones":
                     if not value.isdigit() or int(value) < 1:
-                        raise ParsingError("max_drones must be a positive integer.")
+                        raise ParsingError(
+                            "'max_drones' must be a positive integer."
+                        )
+
                     if int(value) < self.nb_drones:
-                        raise ParsingError("max_drones can not be less than nb_drones.")
+                        raise ParsingError(
+                            "'max_drones' cannot be smaller than the number of drones."
+                        )
+
                 elif key == "color":
                     try:
                         pygame.Color(value)
                     except:
-                        raise ParsingError("Invalid color.")
-            # print(meta_data)
+                        raise ParsingError(
+                            f"Unknown color '{value}'."
+                        )
 
-
-        # if '[' in line:
-        #     mandatory, meta_data = line.split("[")
-        # else:
-        #     mandatory = line
-        #     meta_data = ""
-
-        # items: List = []
         items = mandatory.split()
-        if not len(items) == 4:
-            raise ParsingError("Invalid start_hub line. mandatory less or more than 4")
+
+        if len(items) != 4:
+            raise ParsingError(
+                "Invalid start_hub definition. Expected: "
+                "'start_hub: <name> <x> <y> [metadata]'."
+            )
 
         _, zone_name, x, y = items
 
-        if zone_name != "start":
-              raise ParsingError("Invalid start_hub name")
+        if "-" in zone_name:
+            raise ParsingError(
+                "Zone names cannot contain '-' characters."
+            )
         
-        if not x.isdigit() or int(x) < 0:
-              raise ParsingError("coords have to be a positive integer")
-        
-        if not x.isdigit() or int(y) < 0:
-              raise ParsingError("coords have to be a positive integer")
+        for hub in self.hubs:
+            if hub["name"] == zone_name:
+                raise ParsingError(
+                    "Zone names must be unique."
+                )
+
+        if (x, y) in self.coords:
+            raise ParsingError(
+                "Zone coordinates must be unique."
+            )
+        else:
+            self.coords.append((x, y))
+
+        try:
+            x = float(x)
+        except:
+            raise ParsingError(
+                "The x coordinate must be a valid number."
+            )
+
+        try:
+            y = float(y)
+        except:
+            raise ParsingError(
+                "The y coordinate must be a valid number."
+            )
 
         hub: Dict = {}
         hub["name"] = items[1]
-        hub["x"] = int(items[2]) #Later parse
-        hub["y"] = int(items[3])        #Later parse
+        hub["x"] = x
+        hub["y"] = y
 
         if meta_data:
-                meta_data = meta_data.strip("[]")
-                meta_data = meta_data.split()
-                for data in meta_data:
-                        key, value = data.split("=")
-                        hub[key] = int(value) if value.isdigit() else value
+            meta_data = meta_data.strip("[]")
+            meta_data = meta_data.split()
+            for data in meta_data:
+                key, value = data.split("=")
+                hub[key] = int(value) if value.isdigit() else value
 
         self.start_hub = hub
         self.hubs.append(hub)
@@ -263,81 +317,443 @@ class InputParser():
 
     def parse_hub(self, line: str) -> None:
 
-        if '[' in line:
-                mandatory, meta_data = line.split("[")
-        else:
-                mandatory = line
-                meta_data = ""
+        mandatory = line
+        meta_data = ""
+        seen_keys = set()
 
-        # items: List = []
+        if "[" not in line and "]" not in line:
+            pass
+
+        elif "[" not in line or "]" not in line:
+            raise ParsingError("Metadata block must start with '[' and end with ']'.")
+
+        else:
+
+            valid_keys = {
+                "color",
+                "zone",
+                "max_drones",
+            }
+
+            valid_zones = {
+                "normal",
+                "restricted",
+                "blocked",
+                "priority",
+            }
+
+            open_idx = line.index("[")
+            close_idx = line.index("]")
+
+            if open_idx > close_idx:
+                raise ParsingError("Opening '[' must appear before closing ']'.")
+
+            if close_idx != len(line) - 1:
+                raise ParsingError("Unexpected characters found after the metadata block.")
+
+            if line[open_idx - 1] != " ":
+                raise ParsingError("Metadata block must be preceded by a space.")
+
+            mandatory = line[:open_idx].strip()
+            meta_data = line[open_idx + 1:close_idx]
+
+            if meta_data.strip() == "":
+                raise ParsingError("Metadata block cannot be empty.")
+
+            for data in meta_data.split():
+
+                if "=" not in data:
+                    raise ParsingError(
+                        "Invalid metadata entry. Expected the format 'key=value'."
+                    )
+
+                if data.count("=") != 1:
+                    raise ParsingError(
+                        f"Invalid metadata entry '{data}'. Expected exactly one '='."
+                    )
+
+                key, value = data.split("=")
+
+                if key not in valid_keys:
+                    raise ParsingError(
+                        f"Unknown metadata key '{key}'."
+                    )
+
+                if key in seen_keys:
+                    raise ParsingError(
+                        f"Duplicate metadata key '{key}'."
+                    )
+
+                seen_keys.add(key)
+
+                if value == "":
+                    raise ParsingError(
+                        f"Metadata key '{key}' is missing a value."
+                    )
+
+                if key == "zone":
+                    if value not in valid_zones:
+                        raise ParsingError(
+                            f"Invalid zone type '{value}'. "
+                            "Expected one of: normal, restricted, blocked, priority."
+                        )
+
+                elif key == "max_drones":
+                    if not value.isdigit() or int(value) < 1:
+                        raise ParsingError(
+                            "'max_drones' must be a positive integer."
+                        )
+
+                elif key == "color":
+                    try:
+                        pygame.Color(value)
+                    except:
+                        raise ParsingError(
+                            f"Unknown color '{value}'."
+                        )
+
         items = mandatory.split()
+
+        if len(items) != 4:
+            raise ParsingError(
+                "Invalid hub definition. Expected: "
+                "'hub: <name> <x> <y> [metadata]'."
+            )
+
+        _, zone_name, x, y = items
+
+        if "-" in zone_name:
+            raise ParsingError(
+                "Zone names cannot contain '-' characters."
+            )
+
+        for hub in self.hubs:
+            if hub["name"] == zone_name:
+                raise ParsingError(
+                    "Zone names must be unique."
+                )
+
+        try:
+            x = float(x)
+        except:
+            raise ParsingError(
+                "The x coordinate must be a valid number."
+            )
+
+        try:
+            y = float(y)
+        except:
+            raise ParsingError(
+                "The y coordinate must be a valid number."
+            )
+
+        if (x, y) in self.coords:
+            raise ParsingError(
+                "Zone coordinates must be unique."
+            )
+        else:
+            self.coords.append((x, y))
+
         hub: Dict = {}
-        hub["name"] = items[1]
-        hub["x"] = int(items[2]) #Later parse
-        hub["y"] = int(items[3]) #Later parse
+        hub["name"] = zone_name
+        hub["x"] = x
+        hub["y"] = y
 
         if meta_data:
-                meta_data = meta_data.strip("[]")
-                meta_data = meta_data.split()
-                for data in meta_data:
-                        key, value = data.split("=")
-                        if key == "zone":
-                                hub["type"] = int(value) if value.isdigit() else value
-                        else:
-                                hub[key] = int(value) if value.isdigit() else value
+            for data in meta_data.split():
+                key, value = data.split("=")
+
+                if key == "zone":
+                    hub["type"] = value
+                else:
+                    hub[key] = int(value) if value.isdigit() else value
 
         self.hubs.append(hub)
 
-
     def parse_end(self, line: str) -> None:
 
-        if '[' in line:
-                mandatory, meta_data = line.split("[")
-        else:
-                mandatory = line
-                meta_data = ""
+        if self.end_hub:
+            raise ParsingError("End hub has already been defined.")
 
-        # items: List = []
+        mandatory = line
+        meta_data = ""
+        seen_keys = set()
+
+        if "[" not in line and "]" not in line:
+            pass
+
+        elif "[" not in line or "]" not in line:
+            raise ParsingError("Metadata block must start with '[' and end with ']'.")
+
+        else:
+
+            valid_keys = {
+                "color",
+                "zone",
+                "max_drones",
+            }
+
+            valid_zones = {
+                "normal",
+                "restricted",
+                "blocked",
+                "priority",
+            }
+
+            open_idx = line.index("[")
+            close_idx = line.index("]")
+
+            if open_idx > close_idx:
+                raise ParsingError("Opening '[' must appear before closing ']'.")
+
+            if close_idx != len(line) - 1:
+                raise ParsingError("Unexpected characters found after the metadata block.")
+
+            if line[open_idx - 1] != " ":
+                raise ParsingError("Metadata block must be preceded by a space.")
+
+            mandatory = line[:open_idx].strip()
+            meta_data = line[open_idx + 1:close_idx]
+
+            if meta_data.strip() == "":
+                raise ParsingError("Metadata block cannot be empty.")
+
+            for data in meta_data.split():
+
+                if "=" not in data:
+                    raise ParsingError(
+                        "Invalid metadata entry. Expected the format 'key=value'."
+                    )
+
+                if data.count("=") != 1:
+                    raise ParsingError(
+                        f"Invalid metadata entry '{data}'. Expected exactly one '='."
+                    )
+
+                key, value = data.split("=")
+
+                if key not in valid_keys:
+                    raise ParsingError(
+                        f"Unknown metadata key '{key}'."
+                    )
+
+                if key in seen_keys:
+                    raise ParsingError(
+                        f"Duplicate metadata key '{key}'."
+                    )
+
+                seen_keys.add(key)
+
+                if value == "":
+                    raise ParsingError(
+                        f"Metadata key '{key}' is missing a value."
+                    )
+
+                if key == "zone":
+                    if value not in valid_zones:
+                        raise ParsingError(
+                            f"Invalid zone type '{value}'. "
+                            "Expected one of: normal, restricted, blocked, priority."
+                        )
+
+                    if value == "blocked":
+                        raise ParsingError(
+                            "The end hub cannot have zone type 'blocked'."
+                        )
+
+                elif key == "max_drones":
+                    if not value.isdigit() or int(value) < 1:
+                        raise ParsingError(
+                            "'max_drones' must be a positive integer."
+                        )
+
+                elif key == "color":
+                    try:
+                        pygame.Color(value)
+                    except:
+                        raise ParsingError(
+                            f"Unknown color '{value}'."
+                        )
+
         items = mandatory.split()
+
+        if len(items) != 4:
+            raise ParsingError(
+                "Invalid end_hub definition. Expected: "
+                "'end_hub: <name> <x> <y> [metadata]'."
+            )
+
+        _, zone_name, x, y = items
+
+        if "-" in zone_name:
+            raise ParsingError(
+                "Zone names cannot contain '-' characters."
+            )
+
+        for hub in self.hubs:
+            if hub["name"] == zone_name:
+                raise ParsingError(
+                    "Zone names must be unique."
+                )
+
+        try:
+            x = float(x)
+        except:
+            raise ParsingError(
+                "The x coordinate must be a valid number."
+            )
+
+        try:
+            y = float(y)
+        except:
+            raise ParsingError(
+                "The y coordinate must be a valid number."
+            )
+
+        if (x, y) in self.coords:
+            raise ParsingError(
+                "Zone coordinates must be unique."
+            )
+        else:
+            self.coords.append((x, y))
+
         hub: Dict = {}
-        hub["name"] = items[1]
-        hub["x"] = int(items[2]) #Later parse
-        hub["y"] = int(items[3]) #Later parse
+        hub["name"] = zone_name
+        hub["x"] = x
+        hub["y"] = y
 
         if meta_data:
-                meta_data = meta_data.strip("[]")
-                meta_data = meta_data.split()
-                for data in meta_data:
-                        key, value = data.split("=")
-                        hub[key] = int(value) if value.isdigit() else value
+            for data in meta_data.split():
+                key, value = data.split("=")
+
+                if key == "zone":
+                    hub["type"] = value
+                else:
+                    hub[key] = int(value) if value.isdigit() else value
 
         self.end_hub = hub
         self.hubs.append(hub)
 
+    def parse_connection(self, line: str) -> None:
 
-    def parse_connection(self, line: str):
+        mandatory = line
+        meta_data = ""
+        seen_keys = set()
 
-        if '[' in line:
-                mandatory, meta_data = line.split("[")
+        if "[" not in line and "]" not in line:
+            pass
+
+        elif "[" not in line or "]" not in line:
+            raise ParsingError("Metadata block must start with '[' and end with ']'.")
+
         else:
-                mandatory = line
-                meta_data = ""
 
-        # items: List = []
-        _, value = mandatory.split()
-        items = value.split("-")
+            open_idx = line.index("[")
+            close_idx = line.index("]")
+
+            if open_idx > close_idx:
+                raise ParsingError("Opening '[' must appear before closing ']'.")
+
+            if close_idx != len(line) - 1:
+                raise ParsingError("Unexpected characters found after the metadata block.")
+
+            if line[open_idx - 1] != " ":
+                raise ParsingError("Metadata block must be preceded by a space.")
+
+            mandatory = line[:open_idx].strip()
+            meta_data = line[open_idx + 1:close_idx]
+
+            if meta_data.strip() == "":
+                raise ParsingError("Metadata block cannot be empty.")
+
+            for data in meta_data.split():
+
+                if "=" not in data:
+                    raise ParsingError(
+                        "Invalid metadata entry. Expected the format 'key=value'."
+                    )
+
+                if data.count("=") != 1:
+                    raise ParsingError(
+                        f"Invalid metadata entry '{data}'. Expected exactly one '='."
+                    )
+
+                key, value = data.split("=")
+
+                if key != "max_link_capacity":
+                    raise ParsingError(
+                        f"Unknown metadata key '{key}'."
+                    )
+
+                if key in seen_keys:
+                    raise ParsingError(
+                        f"Duplicate metadata key '{key}'."
+                    )
+
+                seen_keys.add(key)
+
+                if not value.isdigit() or int(value) < 1:
+                    raise ParsingError(
+                        "'max_link_capacity' must be a positive integer."
+                    )
+
+        parts = mandatory.split()
+
+        if len(parts) != 2:
+            raise ParsingError(
+                "Invalid connection definition. Expected: "
+                "'connection: <hub1>-<hub2> [metadata]'."
+            )
+
+        if parts[0] != "connection:":
+            raise ParsingError(
+                "Connection must start with 'connection:'."
+            )
+
+        if parts[1].count("-") != 1:
+            raise ParsingError(
+                "Connection must connect exactly two hubs using a single '-'."
+            )
+
+        source, target = parts[1].split("-")
+
+        if source == "" or target == "":
+            raise ParsingError(
+                "Connection endpoints cannot be empty."
+            )
+
+        if source == target:
+            raise ParsingError(
+                "A hub cannot be connected to itself."
+            )
+
+        names = {hub["name"] for hub in self.hubs}
+
+        if source not in names:
+            raise ParsingError(f"Unknown hub '{source}'.")
+
+        if target not in names:
+            raise ParsingError(f"Unknown hub '{target}'.")
+
+        for connection in self.connections:
+            for a, b in connection.items():
+                if a == "max_link_capacity":
+                    continue
+
+                if (a == source and b == target) or (a == target and b == source):
+                    raise ParsingError(
+                        "Duplicate connection."
+                    )
+
         conn: Dict = {}
-        conn[items[0]] = items[1] #Later parse
+        conn[source] = target
 
         if meta_data:
-                meta_data = meta_data.strip("[]")
-                meta_data = meta_data.split()
-                for data in meta_data:
-                        key, value = data.split("=")
-                        conn[key] = int(value) if value.isdigit() else value
+            for data in meta_data.split():
+                key, value = data.split("=")
+                conn[key] = int(value)
 
         self.connections.append(conn)
-
 
     def parse_map(self, path: str) -> Map:
 
