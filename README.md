@@ -1,5 +1,5 @@
 
-*This project has been created as part of the 42 curriculum by <lsebar>.*
+*This project has been created as part of the 42 curriculum by lsebar.*
 
 # Fly-in
 
