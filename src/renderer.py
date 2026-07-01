@@ -1,9 +1,9 @@
 import pygame
 import random
-from typing import List, Dict
 from zone import Zone
 from graph import Graph
 from simulation import Simulation
+
 
 class Renderer:
     MARGIN = 50
@@ -109,14 +109,17 @@ class Renderer:
         new_width = int(original_width * scale_factor)
         new_height = int(original_height * scale_factor)
 
-        scaled_drone = pygame.transform.scale(drone_image, (new_width, new_height))
+        scaled_drone = pygame.transform.scale(drone_image,
+                                              (new_width,
+                                               new_height))
 
         return scaled_drone
-    
-    def draw_tick(self, font, screen):
-        text = font.render(f"Turns: {self.sim.current_turn}", True, (255, 255, 255))
-        screen.blit(text, (1, 1))
 
+    def draw_tick(self, font, screen):
+        text = font.render(f"Turns: {self.sim.current_turn}",
+                           True,
+                           (255, 255, 255))
+        screen.blit(text, (1, 1))
 
     def draw(
         self,
@@ -162,7 +165,9 @@ class Renderer:
                 (x, y),
                 20 * self.zoom
             )
-            image = pygame.font.Font(None, 15).render(f"{zone.name}", True, (255, 255, 255))
+            image = pygame.font.Font(None, 15).render(f"{zone.name}",
+                                                      True,
+                                                      (255, 255, 255))
             screen.blit(image, (x + 5, y + 20))
 
         # DRONES
@@ -185,20 +190,20 @@ class Renderer:
             image_rect = image.get_rect(center=(drone_x, drone_y))
             screen.blit(image, (image_rect))
 
-            text_surface = pygame.font.Font(None, 50).render(f"{drone.id}", True, (255, 255, 255))
+            text_surface = pygame.font.Font(None, 50).render(f"{drone.id}",
+                                                             True,
+                                                             (255, 255, 255))
             text_rect = text_surface.get_rect(center=(drone_x, drone_y))
             screen.blit(text_surface, text_rect)
 
         self.draw_tick(font, screen)
-
-
 
     def fly_the_drones(self, sim: Simulation) -> None:
 
         pygame.init()
 
         screen = pygame.display.set_mode(
-            (1024, 720),
+            (1920, 1080),
             pygame.RESIZABLE
         )
 
@@ -220,8 +225,8 @@ class Renderer:
                         sim.run()
                         if self.rainbow:
                             self.color = pygame.Color(random.randint(0, 255),
-                                                        random.randint(0, 255),
-                                                        random.randint(0, 255))
+                                                      random.randint(0, 255),
+                                                      random.randint(0, 255))
                 if event.type == pygame.MOUSEWHEEL:
                     self.zoom += event.y * 0.1
                     self.zoom = max(0.5, min(3.0, self.zoom))

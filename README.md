@@ -1,4 +1,3 @@
-
 *This project has been created as part of the 42 curriculum by lsebar.*
 
 # Fly-in
@@ -113,11 +112,8 @@ This improves readability by making path conflicts, congestion, and delivery pro
 
 AI was used to:
 
-- draft the README structure,
-- improve wording and readability,
-- organize the project description into clear sections.
-
-AI was not used as a source of truth for project logic. All implementation details must be reviewed and understood manually.
+- AI was used to help with docs (docs strings) to describe each function used, also the technology was helped me
+  to fix mypy requirements.
 
 ## Notes
 

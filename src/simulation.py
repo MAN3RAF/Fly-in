@@ -1,8 +1,8 @@
 from typing import List, Dict
+
 from zone import Zone
 from drone import Drone
 from connection import Connection
-from parser import Map
 from graph import Graph
 from algo import Algo
 
@@ -22,7 +22,10 @@ class Simulation:
             self.conn[(c.zone_2, c.zone_1)] = c
 
     def is_finished(self) -> bool:
-        return all(drone.current_zone == drone.destination for drone in self.graph.drones)
+        return all(
+            drone.current_zone == drone.destination
+            for drone in self.graph.drones
+        )
 
     def assign_drones_path(self, paths: List[List[Zone]]) -> None:
         usable_paths = self.algo.get_usable_paths(paths)
@@ -32,28 +35,47 @@ class Simulation:
         for i, drone in enumerate(self.graph.drones):
             drone.path = usable_paths[i % nb_paths]
 
-    def is_connection_available(self, drone: Drone, next_zone: Zone, connections: Dict[tuple[str, str], int]) -> bool:
+    def is_connection_available(
+        self,
+        drone: Drone,
+        next_zone: Zone,
+        connections: Dict[tuple[str, str], int],
+    ) -> bool:
 
         conn = self.get_current_connection(drone, next_zone)
 
-        connection_key = tuple(sorted([drone.current_zone.name, next_zone.name]))
+        connection_key = tuple(sorted([drone.current_zone.name,
+                                       next_zone.name]))
         current_traffic = connections.get(connection_key, 0)
 
         return current_traffic < conn.max_capacity
 
     def is_zone_available(self, next_zone: Zone) -> bool:
-        in_zone_only = sum(1 for d in self.graph.drones if d.current_zone == next_zone and (not d.in_transit))
-        
-        in_transit = sum(1 for d in self.graph.drones if d.in_transit and d.get_next_zone() == next_zone)
-        
+        in_zone_only = sum(
+            1
+            for d in self.graph.drones
+            if d.current_zone == next_zone and (not d.in_transit)
+        )
+
+        in_transit = sum(
+            1
+            for d in self.graph.drones
+            if d.in_transit and d.get_next_zone() == next_zone
+        )
+
         return (in_zone_only + in_transit) < next_zone.max_drones
-    
-    def get_current_connection(self, drone: Drone, next_zone: Zone) -> Connection:
+
+    def get_current_connection(self,
+                               drone: Drone,
+                               next_zone: Zone) -> Connection:
 
         conn = [
-            c for c in self.graph.connections 
-            if (c.zone_1 == drone.current_zone and c.zone_2 == next_zone) or 
-               (c.zone_2 == drone.current_zone and c.zone_1 == next_zone)
+            c
+            for c in self.graph.connections
+            if (
+                (c.zone_1 == drone.current_zone and c.zone_2 == next_zone)
+                or (c.zone_2 == drone.current_zone and c.zone_1 == next_zone)
+            )
         ]
         if conn:
             return conn[0]
@@ -67,7 +89,7 @@ class Simulation:
         output_parts: List[str] = []
         connections: Dict[tuple[Zone, Zone], int] = {}
 
-        # create a connection to easy access to the conn and how much zones passed in it.
+        # easy access to the conn and how much zones passed in it.
         for drone in self.graph.drones:
             if drone.in_transit:
                 nz = drone.get_next_zone()
@@ -82,7 +104,9 @@ class Simulation:
                 drone.in_transit = False
                 drone.move()
                 drone.moved = True
-                output_parts.append(f"D{drone.id}-{conn.zone_1.name}-{conn.zone_2.name}")
+                output_parts.append(
+                    f"D{drone.id}-{conn.zone_1.name}-{conn.zone_2.name}"
+                )
             if drone.current_zone == drone.destination:
                 continue
 
@@ -91,7 +115,9 @@ class Simulation:
             if next_zone is None:
                 continue
 
-            conn_av = self.is_connection_available(drone, next_zone, connections)
+            conn_av = self.is_connection_available(drone,
+                                                   next_zone,
+                                                   connections)
             zone_av = self.is_zone_available(next_zone)
 
             if (not drone.moved) and conn_av and zone_av:
@@ -110,7 +136,7 @@ class Simulation:
 
         self.current_turn += 1
         return " ".join(output_parts)
-    
+
     def run(self):
         if not self.is_finished():
             print(self.run_turn())

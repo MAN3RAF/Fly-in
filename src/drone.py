@@ -1,12 +1,13 @@
-from typing import List, Dict
+from typing import List
 from zone import Zone
+
 
 class Drone:
     def __init__(
         self, id: int, zone: Zone,
         path: List[Zone], destination: Zone
     ) -> None:
-        
+
         self.id = id
         self.current_zone = zone
         self.destination = destination

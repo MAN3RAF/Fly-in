@@ -6,118 +6,106 @@ from exceptions import ParsingError
 import pygame
 
 
-class Map():
+class Map:
     def __init__(
-                    self, nb_drones: int, hubs: List[Dict],
-                    connections: List[Dict], start_hub: Dict,
-                    end_hub: Dict) -> None:
+        self,
+        nb_drones: int,
+        hubs: List[Dict],
+        connections: List[Dict],
+        start_hub: Dict,
+        end_hub: Dict,
+    ) -> None:
 
-            self.nb_drones = nb_drones # int
-            self.hubs = hubs # Dict
-            self.connections = connections # List[dict[str, str]]
-            self.zones: List[Zone] = []
-            self.start_hub: Dict = start_hub
-            self.end_hub: Dict = end_hub
-            self.connects: List[Connection] = []
-            self.drones: List[Drone] = []
-
+        self.nb_drones = nb_drones  # int
+        self.hubs = hubs  # Dict
+        self.connections = connections  # List[dict[str, str]]
+        self.zones: List[Zone] = []
+        self.start_hub: Dict = start_hub
+        self.end_hub: Dict = end_hub
+        self.connects: List[Connection] = []
+        self.drones: List[Drone] = []
 
     def init_map(self) -> None:
-            self.get_hubs()
-            self.get_drones()
-            self.get_connections()
-
+        self.get_hubs()
+        self.get_drones()
+        self.get_connections()
 
     def get_hubs(self) -> None:
 
-            for hub in self.hubs:
+        for hub in self.hubs:
 
-                    name = hub['name']
-                    coords = (hub['x'], hub['y'])
-                    color = "none"
-                    max_drones = 1
-                    type = "normal"
+            name = hub["name"]
+            coords = (hub["x"], hub["y"])
+            color = "none"
+            max_drones = 1
+            type = "normal"
 
-                    if 'color' in hub:
-                            color = hub['color']
-                    if 'max_drones' in hub:
-                        max_drones = hub['max_drones']
-                    if (not 'max_drones' in hub) and hub['name'] == self.end_hub['name']:
-                            max_drones = self.nb_drones
-                    if 'type' in hub:
-                            type = hub["type"]
+            if "color" in hub:
+                color = hub["color"]
+            if "max_drones" in hub:
+                max_drones = hub["max_drones"]
+            if (not "max_drones" in hub) and hub["name"] == self.end_hub["name"]:
+                max_drones = self.nb_drones
+            if "type" in hub:
+                type = hub["type"]
 
-                    if hub['name'] == self.start_hub['name']:
-                        max_drones = self.nb_drones
-                    elif hub['name'] == self.end_hub['name']:
-                        max_drones = self.nb_drones
+            if hub["name"] == self.start_hub["name"]:
+                max_drones = self.nb_drones
+            elif hub["name"] == self.end_hub["name"]:
+                max_drones = self.nb_drones
 
-                    zone = Zone(name, coords, color, max_drones, type)
+            zone = Zone(name, coords, color, max_drones, type)
 
-                    self.zones.append(zone)
-
+            self.zones.append(zone)
 
     def get_connections(self) -> None:
-            if not self.zones:
-                    self.get_hubs()
+        if not self.zones:
+            self.get_hubs()
 
-            zones_by_name: dict[str, Zone] = {
-                    zone.name: zone
-                    for zone in self.zones
-            }
+        zones_by_name: dict[str, Zone] = {zone.name: zone for zone in self.zones}
 
-            for conn in self.connections:
-                    source_name: str | None = None
-                    target_name: str | None = None
+        for conn in self.connections:
+            source_name: str | None = None
+            target_name: str | None = None
 
-                    for key, value in conn.items():
-                            if key == "max_link_capacity":
-                                    continue
-                            
-                            source_name = key
-                            target_name = value
-                            break
+            for key, value in conn.items():
+                if key == "max_link_capacity":
+                    continue
 
-                    source_zone = zones_by_name[source_name]
-                    target_zone = zones_by_name[target_name]
+                source_name = key
+                target_name = value
+                break
 
-                    capacity = conn.get("max_link_capacity", 1)
+            source_zone = zones_by_name[source_name]
+            target_zone = zones_by_name[target_name]
 
-                    self.connects.append(
-                            Connection(
-                                    source_zone,
-                                    target_zone,
-                                    capacity
-                            )
-                    )
+            capacity = conn.get("max_link_capacity", 1)
 
+            self.connects.append(Connection(source_zone, target_zone, capacity))
 
     def get_drones(self) -> None:
 
-            for i in range(0, self.nb_drones):
-                    for zone in self.zones:
-                            if self.start_hub['name'] == zone.name:
-                                    start_zone: Zone = zone
-                    for zone in self.zones:
-                            if self.end_hub['name'] == zone.name:
-                                    end_zone = zone
+        for i in range(0, self.nb_drones):
+            for zone in self.zones:
+                if self.start_hub["name"] == zone.name:
+                    start_zone: Zone = zone
+            for zone in self.zones:
+                if self.end_hub["name"] == zone.name:
+                    end_zone = zone
+
+            drone = Drone(i, start_zone, [], end_zone)
+            self.drones.append(drone)
 
 
-                    drone = Drone(i, start_zone, [], end_zone)
-                    self.drones.append(drone)
-
-
-
-class InputParser():
+class InputParser:
 
     def __init__(self) -> None:
-            self.nb_drones: int = 0
-            self.hubs: List[Dict] = []
-            self.connections: List[Dict[str, str]] = []
-            self.start_hub: Dict = None
-            self.end_hub: Dict = None
-            self.coords: List[tuple] = []
-
+        self.nb_drones: int = 0
+        self.hubs: List[Dict] = []
+        self.connections: List[Dict[str, str]] = []
+        self.start_hub: Dict = None
+        self.end_hub: Dict = None
+        self.coords: List[tuple] = []
 
     def parse_drones(self, line: str) -> None:
 
@@ -125,7 +113,8 @@ class InputParser():
 
         if len(parts) != 2:
             raise ParsingError(
-                "Invalid nb_drones format. Expected 'nb_drones: <number>'.")
+                "Invalid nb_drones format. Expected 'nb_drones: <number>'."
+            )
 
         if not parts[0] == "nb_drones:":
             raise ParsingError("Invalid nb_drones.")
@@ -135,14 +124,10 @@ class InputParser():
         try:
             int(value)
         except:
-            raise ParsingError(
-                "nb_drones must be a positive integer."
-            )
+            raise ParsingError("nb_drones must be a positive integer.")
 
         if int(value) < 1:
-            raise ParsingError(
-                "nb_drones must be a positive integer."
-            )
+            raise ParsingError("nb_drones must be a positive integer.")
 
         self.nb_drones = int(value)
 
@@ -183,13 +168,15 @@ class InputParser():
                 raise ParsingError("Opening '[' must appear before closing ']'.")
 
             if close_idx != len(line) - 1:
-                raise ParsingError("Unexpected characters found after the metadata block.")
+                raise ParsingError(
+                    "Unexpected characters found after the metadata block."
+                )
 
-            if line[open_idx - 1] != ' ':
+            if line[open_idx - 1] != " ":
                 raise ParsingError("Metadata block must be preceded by a space.")
 
             mandatory = line[:open_idx].strip()
-            meta_data = line[open_idx + 1:close_idx]
+            meta_data = line[open_idx + 1 : close_idx]
 
             if meta_data.strip() == "":
                 raise ParsingError("Metadata block cannot be empty.")
@@ -209,18 +196,14 @@ class InputParser():
                 key, value = data.split("=")
 
                 if key not in valid_keys:
-                    raise ParsingError(
-                        f"Unknown metadata key '{key}'."
-                    )
+                    raise ParsingError(f"Unknown metadata key '{key}'.")
                 if key in seen_keys:
                     raise ParsingError(f"Duplicate metadata key '{key}'.")
 
                 seen_keys.add(key)
 
                 if value == "":
-                    raise ParsingError(
-                        f"Metadata key '{key}' is missing a value."
-                    )
+                    raise ParsingError(f"Metadata key '{key}' is missing a value.")
 
                 if key == "zone":
                     if value not in valid_zones:
@@ -236,9 +219,7 @@ class InputParser():
 
                 elif key == "max_drones":
                     if not value.isdigit() or int(value) < 1:
-                        raise ParsingError(
-                            "'max_drones' must be a positive integer."
-                        )
+                        raise ParsingError("'max_drones' must be a positive integer.")
 
                     if int(value) < self.nb_drones:
                         raise ParsingError(
@@ -251,9 +232,7 @@ class InputParser():
                     try:
                         pygame.Color(value)
                     except:
-                        raise ParsingError(
-                            f"Unknown color '{value}'."
-                        )
+                        raise ParsingError(f"Unknown color '{value}'.")
 
         items = mandatory.split()
 
@@ -266,34 +245,24 @@ class InputParser():
         _, zone_name, x, y = items
 
         if "-" in zone_name:
-            raise ParsingError(
-                "Zone names cannot contain '-' characters."
-            )
-        
+            raise ParsingError("Zone names cannot contain '-' characters.")
+
         for hub in self.hubs:
             if hub["name"] == zone_name:
-                raise ParsingError(
-                    "Zone names must be unique."
-                )
+                raise ParsingError("Zone names must be unique.")
 
         try:
             x = float(x)
         except:
-            raise ParsingError(
-                "The x coordinate must be a valid number."
-            )
+            raise ParsingError("The x coordinate must be a valid number.")
 
         try:
             y = float(y)
         except:
-            raise ParsingError(
-                "The y coordinate must be a valid number."
-            )
-        
+            raise ParsingError("The y coordinate must be a valid number.")
+
         if (x, y) in self.coords:
-            raise ParsingError(
-                "Zone coordinates must be unique."
-            )
+            raise ParsingError("Zone coordinates must be unique.")
         else:
             self.coords.append((x, y))
 
@@ -311,7 +280,6 @@ class InputParser():
 
         self.start_hub = hub
         self.hubs.append(hub)
-
 
     def parse_hub(self, line: str) -> None:
 
@@ -347,13 +315,15 @@ class InputParser():
                 raise ParsingError("Opening '[' must appear before closing ']'.")
 
             if close_idx != len(line) - 1:
-                raise ParsingError("Unexpected characters found after the metadata block.")
+                raise ParsingError(
+                    "Unexpected characters found after the metadata block."
+                )
 
             if line[open_idx - 1] != " ":
                 raise ParsingError("Metadata block must be preceded by a space.")
 
             mandatory = line[:open_idx].strip()
-            meta_data = line[open_idx + 1:close_idx]
+            meta_data = line[open_idx + 1 : close_idx]
 
             if meta_data.strip() == "":
                 raise ParsingError("Metadata block cannot be empty.")
@@ -373,21 +343,15 @@ class InputParser():
                 key, value = data.split("=")
 
                 if key not in valid_keys:
-                    raise ParsingError(
-                        f"Unknown metadata key '{key}'."
-                    )
+                    raise ParsingError(f"Unknown metadata key '{key}'.")
 
                 if key in seen_keys:
-                    raise ParsingError(
-                        f"Duplicate metadata key '{key}'."
-                    )
+                    raise ParsingError(f"Duplicate metadata key '{key}'.")
 
                 seen_keys.add(key)
 
                 if value == "":
-                    raise ParsingError(
-                        f"Metadata key '{key}' is missing a value."
-                    )
+                    raise ParsingError(f"Metadata key '{key}' is missing a value.")
 
                 if key == "zone":
                     if value not in valid_zones:
@@ -398,9 +362,7 @@ class InputParser():
 
                 elif key == "max_drones":
                     if not value.isdigit() or int(value) < 1:
-                        raise ParsingError(
-                            "'max_drones' must be a positive integer."
-                        )
+                        raise ParsingError("'max_drones' must be a positive integer.")
 
                 elif key == "color":
                     if value == "rainbow":
@@ -408,49 +370,36 @@ class InputParser():
                     try:
                         pygame.Color(value)
                     except:
-                        raise ParsingError(
-                            f"Unknown color '{value}'."
-                        )
+                        raise ParsingError(f"Unknown color '{value}'.")
 
         items = mandatory.split()
 
         if len(items) != 4:
             raise ParsingError(
-                "Invalid hub definition. Expected: "
-                "'hub: <name> <x> <y> [metadata]'."
+                "Invalid hub definition. Expected: " "'hub: <name> <x> <y> [metadata]'."
             )
 
         _, zone_name, x, y = items
 
         if "-" in zone_name:
-            raise ParsingError(
-                "Zone names cannot contain '-' characters."
-            )
+            raise ParsingError("Zone names cannot contain '-' characters.")
 
         for hub in self.hubs:
             if hub["name"] == zone_name:
-                raise ParsingError(
-                    "Zone names must be unique."
-                )
+                raise ParsingError("Zone names must be unique.")
 
         try:
             x = float(x)
         except:
-            raise ParsingError(
-                "The x coordinate must be a valid number."
-            )
+            raise ParsingError("The x coordinate must be a valid number.")
 
         try:
             y = float(y)
         except:
-            raise ParsingError(
-                "The y coordinate must be a valid number."
-            )
+            raise ParsingError("The y coordinate must be a valid number.")
 
         if (x, y) in self.coords:
-            raise ParsingError(
-                "Zone coordinates must be unique."
-            )
+            raise ParsingError("Zone coordinates must be unique.")
         else:
             self.coords.append((x, y))
 
@@ -507,13 +456,15 @@ class InputParser():
                 raise ParsingError("Opening '[' must appear before closing ']'.")
 
             if close_idx != len(line) - 1:
-                raise ParsingError("Unexpected characters found after the metadata block.")
+                raise ParsingError(
+                    "Unexpected characters found after the metadata block."
+                )
 
             if line[open_idx - 1] != " ":
                 raise ParsingError("Metadata block must be preceded by a space.")
 
             mandatory = line[:open_idx].strip()
-            meta_data = line[open_idx + 1:close_idx]
+            meta_data = line[open_idx + 1 : close_idx]
 
             if meta_data.strip() == "":
                 raise ParsingError("Metadata block cannot be empty.")
@@ -533,21 +484,15 @@ class InputParser():
                 key, value = data.split("=")
 
                 if key not in valid_keys:
-                    raise ParsingError(
-                        f"Unknown metadata key '{key}'."
-                    )
+                    raise ParsingError(f"Unknown metadata key '{key}'.")
 
                 if key in seen_keys:
-                    raise ParsingError(
-                        f"Duplicate metadata key '{key}'."
-                    )
+                    raise ParsingError(f"Duplicate metadata key '{key}'.")
 
                 seen_keys.add(key)
 
                 if value == "":
-                    raise ParsingError(
-                        f"Metadata key '{key}' is missing a value."
-                    )
+                    raise ParsingError(f"Metadata key '{key}' is missing a value.")
 
                 if key == "zone":
                     if value not in valid_zones:
@@ -563,9 +508,7 @@ class InputParser():
 
                 elif key == "max_drones":
                     if not value.isdigit() or int(value) < 1:
-                        raise ParsingError(
-                            "'max_drones' must be a positive integer."
-                        )
+                        raise ParsingError("'max_drones' must be a positive integer.")
                     if int(value) < self.nb_drones:
                         raise ParsingError(
                             "'max_drones' cannot be smaller than the number of drones."
@@ -577,9 +520,7 @@ class InputParser():
                     try:
                         pygame.Color(value)
                     except:
-                        raise ParsingError(
-                            f"Unknown color '{value}'."
-                        )
+                        raise ParsingError(f"Unknown color '{value}'.")
 
         items = mandatory.split()
 
@@ -592,34 +533,24 @@ class InputParser():
         _, zone_name, x, y = items
 
         if "-" in zone_name:
-            raise ParsingError(
-                "Zone names cannot contain '-' characters."
-            )
+            raise ParsingError("Zone names cannot contain '-' characters.")
 
         for hub in self.hubs:
             if hub["name"] == zone_name:
-                raise ParsingError(
-                    "Zone names must be unique."
-                )
+                raise ParsingError("Zone names must be unique.")
 
         try:
             x = float(x)
         except:
-            raise ParsingError(
-                "The x coordinate must be a valid number."
-            )
+            raise ParsingError("The x coordinate must be a valid number.")
 
         try:
             y = float(y)
         except:
-            raise ParsingError(
-                "The y coordinate must be a valid number."
-            )
+            raise ParsingError("The y coordinate must be a valid number.")
 
         if (x, y) in self.coords:
-            raise ParsingError(
-                "Zone coordinates must be unique."
-            )
+            raise ParsingError("Zone coordinates must be unique.")
         else:
             self.coords.append((x, y))
 
@@ -661,13 +592,15 @@ class InputParser():
                 raise ParsingError("Opening '[' must appear before closing ']'.")
 
             if close_idx != len(line) - 1:
-                raise ParsingError("Unexpected characters found after the metadata block.")
+                raise ParsingError(
+                    "Unexpected characters found after the metadata block."
+                )
 
             if line[open_idx - 1] != " ":
                 raise ParsingError("Metadata block must be preceded by a space.")
 
             mandatory = line[:open_idx].strip()
-            meta_data = line[open_idx + 1:close_idx]
+            meta_data = line[open_idx + 1 : close_idx]
 
             if meta_data.strip() == "":
                 raise ParsingError("Metadata block cannot be empty.")
@@ -687,14 +620,10 @@ class InputParser():
                 key, value = data.split("=")
 
                 if key != "max_link_capacity":
-                    raise ParsingError(
-                        f"Unknown metadata key '{key}'."
-                    )
+                    raise ParsingError(f"Unknown metadata key '{key}'.")
 
                 if key in seen_keys:
-                    raise ParsingError(
-                        f"Duplicate metadata key '{key}'."
-                    )
+                    raise ParsingError(f"Duplicate metadata key '{key}'.")
 
                 seen_keys.add(key)
 
@@ -712,9 +641,7 @@ class InputParser():
             )
 
         if parts[0] != "connection:":
-            raise ParsingError(
-                "Connection must start with 'connection:'."
-            )
+            raise ParsingError("Connection must start with 'connection:'.")
 
         if parts[1].count("-") != 1:
             raise ParsingError(
@@ -724,14 +651,10 @@ class InputParser():
         source, target = parts[1].split("-")
 
         if source == "" or target == "":
-            raise ParsingError(
-                "Connection endpoints cannot be empty."
-            )
+            raise ParsingError("Connection endpoints cannot be empty.")
 
         if source == target:
-            raise ParsingError(
-                "A hub cannot be connected to itself."
-            )
+            raise ParsingError("A hub cannot be connected to itself.")
 
         names = {hub["name"] for hub in self.hubs}
 
@@ -747,9 +670,7 @@ class InputParser():
                     continue
 
                 if (a == source and b == target) or (a == target and b == source):
-                    raise ParsingError(
-                        "Duplicate connection."
-                    )
+                    raise ParsingError("Duplicate connection.")
 
         conn: Dict = {}
         conn[source] = target
@@ -764,44 +685,50 @@ class InputParser():
     def parse_map(self, path: str) -> Map:
 
         has_parsed_drones = False
+        try:
+            with open(path, "r") as fp:
+                for line in fp:
+                    line: str = line.strip()
 
-        with open(path, 'r') as fp:
-            for line_idx, line in enumerate(fp, 1):
-                line: str = line.strip()
-
-                if line.startswith("#") or not line:
-                    continue
-                if "#" in line:
-                    line = line.split("#")[0].strip()
-
-                if not has_parsed_drones:
-                    if line.startswith("nb_drones:"):
-                        self.parse_drones(line)
-                        has_parsed_drones = True
+                    if line.startswith("#") or not line:
                         continue
+                    if "#" in line:
+                        line = line.split("#")[0].strip()
+
+                    if not has_parsed_drones:
+                        if line.startswith("nb_drones:"):
+                            self.parse_drones(line)
+                            has_parsed_drones = True
+                            continue
+                        else:
+                            raise ParsingError(
+                                "'nb_drones: <number>' must appear on the first line."
+                            )
+                    elif line.startswith("nb_drones:"):
+                        raise ParsingError("nb_drones has already been defined.")
+
+                    if line.startswith("start_hub:"):
+                        self.parse_start(line)
+                    elif line.startswith("hub:"):
+                        self.parse_hub(line)
+                    elif line.startswith("end_hub:"):
+                        self.parse_end(line)
+                    elif line.startswith("connection:"):
+                        self.parse_connection(line)
                     else:
-                        raise ParsingError("'nb_drones: <number>' must appear on the first line.")
-                elif line.startswith("nb_drones:"):
-                    raise ParsingError("nb_drones has already been defined.")
-
-
-                if line.startswith("start_hub:"):
-                    self.parse_start(line)
-                elif line.startswith("hub:"):
-                    self.parse_hub(line)
-                elif line.startswith("end_hub:"):
-                    self.parse_end(line)
-                elif line.startswith("connection:"):
-                    self.parse_connection(line)
-                else:
-                    raise ParsingError(f"Unrecognized prefix syntax structure: '{line}'")
-
+                        raise ParsingError(
+                            f"Unrecognized prefix syntax structure: '{line}'"
+                        )
+        except FileNotFoundError:
+            raise ParsingError("Map file does not exist.")
         if not self.start_hub:
-              raise ParsingError("No Start_hub was provided.")
+            raise ParsingError("No Start_hub was provided.")
         if not self.end_hub:
-              raise ParsingError("No end_hub was probided")
+            raise ParsingError("No end_hub was probided")
 
-        map = Map(self.nb_drones, self.hubs, self.connections, self.start_hub, self.end_hub)
+        map = Map(
+            self.nb_drones, self.hubs, self.connections, self.start_hub, self.end_hub
+        )
         map.init_map()
 
         return map
